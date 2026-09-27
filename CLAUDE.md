@@ -30,3 +30,14 @@ ssh snadboy@homeassistant "cd /config/custom_components && tar xzf /tmp/sbw.tgz 
 ```
 Full restart for Python changes. Rules are created through the config flow
 (`POST /api/config/config_entries/flow {handler: sb_watch}` then the form).
+
+## First live run (2026-09-27)
+
+Three rules via the flow API (fields / labels / YAML) + one invalid
+(`state_for: soon` → `bad_duration`, form re-shown). "Batteries low"
+(`for: 2m`): matched 13, pending 13, then ONE `sb_watch_changed` with
+entered=13 exactly at the dwell, binary sensor on with `active_since`.
+Bug found: PyYAML 1.1 read `states: [on]` as `[true]` — `_FilterLoader`
+drops the bool resolver so on/off/yes/no stay strings (test added).
+Known limitation: the dwell clock restarts on HA restart (RuleState is in
+memory) — a RestoreEntity for `matched_since` is the fix if it matters.

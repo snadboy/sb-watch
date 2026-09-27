@@ -28,6 +28,9 @@ def test_build_filter_fields_and_yaml_override():
                    "states": ["unavailable", "<20"], "state_for": "2h"}
     cfg = rule.build_filter({"patterns": "fp300", "filter_yaml": "patterns: [sun.]\nstates: [below_horizon]\nstate_for: ''"})
     assert cfg == {"patterns": ["sun."], "states": ["below_horizon"]}
+    # YAML 1.1 booleans stay the state strings people mean
+    cfg = rule.build_filter({"filter_yaml": "patterns: [light.]\nstates: [on, Off, yes, no]\nstate_min: 20"})
+    assert cfg == {"patterns": ["light."], "states": ["on", "Off", "yes", "no"], "state_min": 20}
     try:
         rule.build_filter({"filter_yaml": "- not\n- a mapping"})
         raise AssertionError("expected ValueError")

@@ -14,6 +14,17 @@ from typing import Any
 import yaml
 
 
+class _FilterLoader(yaml.SafeLoader):
+    """YAML 1.1 reads `on`, `off`, `yes`, `no` as booleans — and `on`/`off`
+    are the most common states anyone writes. Keep them as strings."""
+
+
+_FilterLoader.yaml_implicit_resolvers = {
+    ch: [(tag, rx) for tag, rx in resolvers if tag != "tag:yaml.org,2002:bool"]
+    for ch, resolvers in yaml.SafeLoader.yaml_implicit_resolvers.items()
+}
+
+
 def split_list(v: Any) -> list[str]:
     """A comma string from a form field → list; a list passes through; blanks dropped."""
     if v is None or v == "":
@@ -41,7 +52,7 @@ def build_filter(options: dict[str, Any]) -> dict[str, Any]:
         cfg["state_for"] = str(options["state_for"]).strip()
     raw = options.get("filter_yaml")
     if raw and str(raw).strip():
-        parsed = yaml.safe_load(str(raw))
+        parsed = yaml.load(str(raw), Loader=_FilterLoader)
         if not isinstance(parsed, dict):
             raise ValueError("filter_yaml must be a YAML mapping")
         for k, v in parsed.items():
