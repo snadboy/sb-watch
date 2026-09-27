@@ -39,9 +39,37 @@ class RuleRunner:
         self._timer: CALLBACK_TYPE | None = None
         self._listeners: list[Callable[[], None]] = []
 
+    # ---- persistence (the Count sensor stores this as extra restore data) -------
+    def snapshot(self) -> dict[str, Any]:
+        return {
+            "entry_id": self.entry.entry_id,
+            "matched_since": {e: t.isoformat() for e, t in self.state.matched_since.items()},
+            "active": list(self.state.active),
+            "active_since": self.state.active_since.isoformat() if self.state.active_since else None,
+        }
+
+    @callback
+    def restore(self, data: dict[str, Any] | None) -> None:
+        """Pre-seed the dwell clocks from before the restart, so a 2 h dwell does
+        not start over at every HA restart. Only data written by THIS entry counts."""
+        if not data or data.get("entry_id") != self.entry.entry_id or self.state.baselined:
+            return
+        since = {}
+        for e, t in (data.get("matched_since") or {}).items():
+            try:
+                since[e] = dt_util.parse_datetime(t)
+            except (TypeError, ValueError):
+                continue
+        self.state.matched_since = {e: t for e, t in since.items() if t is not None}
+        self.state.active = tuple(sorted(data.get("active") or ()))
+        self.state.active_since = dt_util.parse_datetime(data["active_since"]) if data.get("active_since") else None
+        self.state.baselined = True    # what changed during the downtime is a real change
+
     # ---- lifecycle ----------------------------------------------------------
     @callback
     def start(self) -> None:
+        if self._sub is not None:
+            return
         self._sub = FilterSubscription(self.hass, self.filter_config, self._on_filter)
         self._sub.start()
 

@@ -9,12 +9,13 @@ Actions come later and hang off that event.
 from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
+from homeassistant.core import CoreState, HassJob, HomeAssistant, ServiceCall, callback
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from .const import DOMAIN
+from .const import DOMAIN, STARTUP_SETTLE_SECONDS
 from .runner import RuleRunner
 
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH]
@@ -39,7 +40,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {}).setdefault("runners", {})[entry.entry_id] = runner
     entry.runtime_data = runner
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    runner.start()
+
+    # BOOT RACE: right after a restart many entities still read unknown /
+    # unavailable while their integrations come up. Evaluating then drops them
+    # out of the match set and resets their restored dwell clocks (seen live:
+    # 5 of 13 batteries restored, 8 back to pending). So on a cold start the
+    # first evaluation waits for HA to be fully started plus a settle period;
+    # the entities show the restored state meanwhile.
+    if hass.state is CoreState.running:
+        runner.start()
+    else:
+        @callback
+        def _settled(_now) -> None:
+            runner.start()
+
+        @callback
+        def _started(_event) -> None:
+            entry.async_on_unload(async_call_later(hass, STARTUP_SETTLE_SECONDS, HassJob(_settled, cancel_on_shutdown=True)))
+
+        entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _started))
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
     return True
 

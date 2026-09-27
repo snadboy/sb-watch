@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Any
+
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import ExtraStoredData, RestoreEntity
 
 from .const import DOMAIN
 from .device import device_info
@@ -16,7 +20,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, add: AddEnt
     add([CountSensor(hass, entry, entry.runtime_data)])
 
 
-class CountSensor(SensorEntity):
+@dataclass
+class DwellData(ExtraStoredData):
+    """The runner's dwell clocks, stored beside the sensor's last state."""
+
+    data: dict[str, Any]
+
+    def as_dict(self) -> dict[str, Any]:
+        return self.data
+
+
+class CountSensor(SensorEntity, RestoreEntity):
     _attr_has_entity_name = True
     _attr_name = "Count"
     _attr_should_poll = False
@@ -29,7 +43,14 @@ class CountSensor(SensorEntity):
         self._attr_device_info = device_info(entry, runner.name, hass.data[DOMAIN].get("version"))
 
     async def async_added_to_hass(self) -> None:
+        last = await self.async_get_last_extra_data()
+        if last is not None:
+            self._runner.restore(last.as_dict())
         self.async_on_remove(self._runner.add_listener(self._changed))
+
+    @property
+    def extra_restore_state_data(self) -> ExtraStoredData:
+        return DwellData(self._runner.snapshot())
 
     @callback
     def _changed(self) -> None:

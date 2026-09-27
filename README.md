@@ -23,7 +23,7 @@ units: ["%"]
 states: [unavailable, "<20"]
 ```
 
-`for` is the rule's own dwell: an entity counts only after it has matched
+`for` is the rule's own dwell (its clocks survive an HA restart): an entity counts only after it has matched
 continuously that long (`10m`, `2h`) — hysteresis for values that flap around a
 threshold. It is separate from the filter's `state_for` (time in the current state).
 

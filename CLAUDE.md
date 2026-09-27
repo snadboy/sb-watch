@@ -72,3 +72,24 @@ Also: `async_remove_entry` clears the rule's notification (deleting a rule
 used to leave its persistent notification behind). Test harness: throwaway
 `input_boolean.sb_watch_test` (WS `input_boolean/create`/`delete`), rules
 via the flow API, diagnostics via `/api/diagnostics/config_entry/<id>`.
+
+## 0.3.0 — dwell persistence (2026-09-27)
+
+`RuleRunner.snapshot()`/`restore()`: the Count sensor is a RestoreEntity
+whose `extra_restore_state_data` (`DwellData`) carries `matched_since`,
+`active`, `active_since` and the `entry_id` (guard, as for the Paused
+switch). Restored before `runner.start()` (platforms set up first), and
+`baselined=True` so changes during the downtime count as real changes.
+**Deploy gotcha:** once HACS has installed the integration its files are
+ROOT-owned — `tar xzf` as snadboy fails with "can't remove old file" and
+the old build keeps running (cost one wasted restart pair). Use `sudo tar`.
+
+### Boot race on restore (2026-09-27)
+
+Restart 2 restored 5 of 13 with 8 back to pending: at the first evaluation
+after boot those 8 battery sensors still read `unknown` (integrations not
+up yet) → not matched → `matched_since` dropped → clocks reset. Fix
+(0.3.0): on a cold start the runner starts at `EVENT_HOMEASSISTANT_STARTED`
++ `STARTUP_SETTLE_SECONDS` (60); the entities show the restored count
+meanwhile; `start()` is idempotent. `HassJob` for the timer (a lambda would
+run off-loop — same trap as the warn-ahead).
