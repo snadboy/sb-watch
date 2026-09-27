@@ -1,0 +1,17 @@
+{
+  "domain": "sb_watch",
+  "name": "SB Watch",
+  "codeowners": [
+    "@snadboy"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "sb_filter"
+  ],
+  "documentation": "https://github.com/snadboy/sb-watch",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/snadboy/sb-watch/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

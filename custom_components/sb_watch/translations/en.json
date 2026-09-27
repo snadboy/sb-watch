@@ -1,0 +1,67 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "New SB Watch rule",
+        "description": "A rule watches what an SB filter matches. Across fields: AND. Within a field: OR. Nothing configured matches nothing.",
+        "data": {
+          "name": "Rule name",
+          "patterns": "Entity patterns (comma-separated)",
+          "labels": "Labels",
+          "areas": "Areas",
+          "device_classes": "Device classes (comma-separated)",
+          "units": "Units (comma-separated)",
+          "states": "States \u2014 values and/or ranges (comma-separated)",
+          "state_for": "In current state for (e.g. 2h, <5m)",
+          "for": "Rule dwell \u2014 matched continuously for (e.g. 10m)",
+          "problem": "Report as a problem (binary sensor device class)",
+          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)"
+        },
+        "data_description": {
+          "patterns": "Words in one pattern AND; patterns OR. * and ? wildcards.",
+          "states": "e.g. unavailable, <20, 40-60",
+          "state_for": "Time in the current state, from last_changed; bare number = minutes.",
+          "for": "An entity counts only after matching this long \u2014 hysteresis for flapping values.",
+          "filter_yaml": "Paste an SB Entity Browser card's filter keys: patterns, labels, areas, device_classes, units, states, state_min, state_max, state_for."
+        }
+      }
+    },
+    "error": {
+      "empty_filter": "The filter matches nothing \u2014 configure at least one field.",
+      "bad_yaml": "The YAML is not a mapping (or does not parse).",
+      "bad_duration": "Unreadable duration \u2014 use 2h, 1h30m, 90s, <5m or a number of minutes."
+    },
+    "abort": {}
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SB Watch rule",
+        "data": {
+          "name": "Rule name",
+          "patterns": "Entity patterns (comma-separated)",
+          "labels": "Labels",
+          "areas": "Areas",
+          "device_classes": "Device classes (comma-separated)",
+          "units": "Units (comma-separated)",
+          "states": "States \u2014 values and/or ranges (comma-separated)",
+          "state_for": "In current state for (e.g. 2h, <5m)",
+          "for": "Rule dwell \u2014 matched continuously for (e.g. 10m)",
+          "problem": "Report as a problem (binary sensor device class)",
+          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)"
+        }
+      }
+    },
+    "error": {
+      "empty_filter": "The filter matches nothing \u2014 configure at least one field.",
+      "bad_yaml": "The YAML is not a mapping (or does not parse).",
+      "bad_duration": "Unreadable duration \u2014 use 2h, 1h30m, 90s, <5m or a number of minutes."
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Refresh",
+      "description": "Re-evaluate every rule now."
+    }
+  }
+}
