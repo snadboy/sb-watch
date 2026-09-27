@@ -14,8 +14,9 @@ from homeassistant.helpers import selector
 from custom_components.sb_filter.grammar import parse_duration, parse_filter
 
 from .const import (
-    CONF_AREAS, CONF_DEVICE_CLASSES, CONF_FILTER_YAML, CONF_FOR, CONF_LABELS, CONF_NAME,
-    CONF_PATTERNS, CONF_PROBLEM, CONF_STATE_FOR, CONF_STATES, CONF_UNITS, DOMAIN,
+    ACTIONS, ACTS, CONF_ACT, CONF_ACTION, CONF_AREAS, CONF_DEVICE_CLASSES, CONF_FILTER_YAML, CONF_FOR,
+    CONF_LABELS, CONF_NAME, CONF_NOTIFY_SERVICE, CONF_PATTERNS, CONF_PROBLEM, CONF_STATE_FOR, CONF_STATES,
+    CONF_UNITS, CONF_WARN_AHEAD, DOMAIN,
 )
 from .rule import build_filter
 
@@ -36,6 +37,13 @@ def _schema(defaults: dict[str, Any], with_name: bool) -> vol.Schema:
         vol.Optional(CONF_FOR, default=d.get(CONF_FOR, "")): selector.TextSelector(),
         vol.Optional(CONF_PROBLEM, default=d.get(CONF_PROBLEM, True)): selector.BooleanSelector(),
         vol.Optional(CONF_FILTER_YAML, default=d.get(CONF_FILTER_YAML, "")): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
+        vol.Optional(CONF_ACTION, default=d.get(CONF_ACTION, "none")): selector.SelectSelector(selector.SelectSelectorConfig(
+            options=[{"value": a, "label": l} for a, l in (("none", "No action (entities and event only)"), ("notify", "Notify"), ("notify_then_act", "Notify, then act after the warn-ahead"), ("act", "Act at once"))],
+            mode=selector.SelectSelectorMode.DROPDOWN)),
+        vol.Optional(CONF_NOTIFY_SERVICE, default=d.get(CONF_NOTIFY_SERVICE, "")): selector.TextSelector(),
+        vol.Optional(CONF_ACT, default=d.get(CONF_ACT, "turn_off")): selector.SelectSelector(selector.SelectSelectorConfig(
+            options=[{"value": a, "label": a.replace("_", " ")} for a in ACTS], mode=selector.SelectSelectorMode.DROPDOWN)),
+        vol.Optional(CONF_WARN_AHEAD, default=d.get(CONF_WARN_AHEAD, "10m")): selector.TextSelector(),
     })
     return vol.Schema(fields)
 
@@ -53,6 +61,16 @@ def _validate(user_input: dict[str, Any]) -> dict[str, str]:
         errors[CONF_STATE_FOR] = "bad_duration"
     if user_input.get(CONF_FOR) and parse_duration(user_input[CONF_FOR]) is None:
         errors[CONF_FOR] = "bad_duration"
+    mode = user_input.get(CONF_ACTION) or "none"
+    if mode not in ACTIONS:
+        errors[CONF_ACTION] = "bad_action"
+    ns = (user_input.get(CONF_NOTIFY_SERVICE) or "").strip()
+    if ns and not ns.startswith("notify."):
+        errors[CONF_NOTIFY_SERVICE] = "bad_notify"
+    if mode in ("notify_then_act", "act") and (user_input.get(CONF_ACT) or "") not in ACTS:
+        errors[CONF_ACT] = "bad_act"
+    if mode == "notify_then_act" and user_input.get(CONF_WARN_AHEAD) and parse_duration(user_input[CONF_WARN_AHEAD]) is None:
+        errors[CONF_WARN_AHEAD] = "bad_duration"
     return errors
 
 

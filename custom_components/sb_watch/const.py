@@ -16,5 +16,13 @@ CONF_FOR = "for"                 # rule-level dwell: matched continuously this l
 CONF_FILTER_YAML = "filter_yaml"  # advanced: a YAML mapping in the FILTER.md grammar; overrides the fields
 CONF_PROBLEM = "problem"          # binary sensor device_class problem (on = something needs attention)
 
+# actions (entry.options)
+CONF_ACTION = "action"             # none | notify | notify_then_act | act
+CONF_NOTIFY_SERVICE = "notify_service"   # "notify.mobile_app_x"; empty = a persistent notification
+CONF_ACT = "act"                   # turn_off | turn_on | toggle  (homeassistant.<act> on the entered entities)
+CONF_WARN_AHEAD = "warn_ahead"     # notify_then_act: act this long after the notification, if still active
+ACTIONS = ("none", "notify", "notify_then_act", "act")
+ACTS = ("turn_off", "turn_on", "toggle")
+
 FILTER_FIELDS = (CONF_PATTERNS, CONF_LABELS, CONF_AREAS, CONF_DEVICE_CLASSES, CONF_UNITS, CONF_STATES, CONF_STATE_FOR)
 DWELL_TICK_SECONDS = 30

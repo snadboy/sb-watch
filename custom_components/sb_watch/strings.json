@@ -15,21 +15,30 @@
           "state_for": "In current state for (e.g. 2h, <5m)",
           "for": "Rule dwell \u2014 matched continuously for (e.g. 10m)",
           "problem": "Report as a problem (binary sensor device class)",
-          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)"
+          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)",
+          "action": "Action",
+          "notify_service": "Notify service (notify.\u2026; empty = persistent notification)",
+          "act": "What to do to entities that enter",
+          "warn_ahead": "Warn-ahead \u2014 act this long after notifying (notify-then-act only)"
         },
         "data_description": {
           "patterns": "Words in one pattern AND; patterns OR. * and ? wildcards.",
           "states": "e.g. unavailable, <20, 40-60",
           "state_for": "Time in the current state, from last_changed; bare number = minutes.",
           "for": "An entity counts only after matching this long \u2014 hysteresis for flapping values.",
-          "filter_yaml": "Paste an SB Entity Browser card's filter keys: patterns, labels, areas, device_classes, units, states, state_min, state_max, state_for."
+          "filter_yaml": "Paste an SB Entity Browser card's filter keys: patterns, labels, areas, device_classes, units, states, state_min, state_max, state_for.",
+          "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls homeassistant.<act> on the entities that just entered \u2014 never again on the whole set. The rule's Paused switch stops both.",
+          "warn_ahead": "e.g. 10m. 0 = act at once after notifying."
         }
       }
     },
     "error": {
       "empty_filter": "The filter matches nothing \u2014 configure at least one field.",
       "bad_yaml": "The YAML is not a mapping (or does not parse).",
-      "bad_duration": "Unreadable duration \u2014 use 2h, 1h30m, 90s, <5m or a number of minutes."
+      "bad_duration": "Unreadable duration \u2014 use 2h, 1h30m, 90s, <5m or a number of minutes.",
+      "bad_action": "Unknown action.",
+      "bad_notify": "A notify service looks like notify.mobile_app_phone.",
+      "bad_act": "Choose what to do: turn off, turn on or toggle."
     },
     "abort": {}
   },
@@ -48,14 +57,25 @@
           "state_for": "In current state for (e.g. 2h, <5m)",
           "for": "Rule dwell \u2014 matched continuously for (e.g. 10m)",
           "problem": "Report as a problem (binary sensor device class)",
-          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)"
+          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)",
+          "action": "Action",
+          "notify_service": "Notify service (notify.\u2026; empty = persistent notification)",
+          "act": "What to do to entities that enter",
+          "warn_ahead": "Warn-ahead \u2014 act this long after notifying (notify-then-act only)"
+        },
+        "data_description": {
+          "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls homeassistant.<act> on the entities that just entered \u2014 never again on the whole set. The rule's Paused switch stops both.",
+          "warn_ahead": "e.g. 10m. 0 = act at once after notifying."
         }
       }
     },
     "error": {
       "empty_filter": "The filter matches nothing \u2014 configure at least one field.",
       "bad_yaml": "The YAML is not a mapping (or does not parse).",
-      "bad_duration": "Unreadable duration \u2014 use 2h, 1h30m, 90s, <5m or a number of minutes."
+      "bad_duration": "Unreadable duration \u2014 use 2h, 1h30m, 90s, <5m or a number of minutes.",
+      "bad_action": "Unknown action.",
+      "bad_notify": "A notify service looks like notify.mobile_app_phone.",
+      "bad_act": "Choose what to do: turn off, turn on or toggle."
     }
   },
   "services": {

@@ -16,4 +16,6 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
         "active": list(r.active),
         "pending": [e for e in r.matched if e not in r.active],
         "last_payload": r.last_payload,
+        "actions": {"mode": r.actions.mode, "act": r.actions.act, "warn_seconds": r.actions.warn_seconds,
+                    "notify_service": r.actions.notify_service, "paused": r.actions.paused, "last_action": r.actions.last_action},
     }

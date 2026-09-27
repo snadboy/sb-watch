@@ -74,6 +74,17 @@ def test_flap_never_promotes():
     assert s.active == ()
 
 
+def test_format_message():
+    import importlib
+    fm = importlib.import_module("sb_watch_pure.actions_pure").format_message
+    assert fm([], 0) == "Clear"
+    assert fm(["A", "B"], 2) == "2 active: A, B"
+    names = [f"N{i}" for i in range(12)]
+    assert fm(names, 12).endswith("N7 and 4 more")
+    assert fm(["A"], 1, "turn_off", 600) == "1 active: A — turn off in 10 min unless cleared"
+    assert fm(["A"], 1, "turn_off", 30) == "1 active: A — turn off in 30 s unless cleared"
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

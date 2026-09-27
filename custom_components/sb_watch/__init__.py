@@ -17,7 +17,7 @@ from homeassistant.loader import async_get_integration
 from .const import DOMAIN
 from .runner import RuleRunner
 
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH]
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -46,6 +46,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def _async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """The rule is being deleted (not reloaded): take its notification down with it."""
+    from .actions import RuleActions  # noqa: PLC0415
+
+    RuleActions(hass, entry.entry_id, entry.title, entry.options).clear_notification()
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

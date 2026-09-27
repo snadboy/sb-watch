@@ -41,3 +41,34 @@ Bug found: PyYAML 1.1 read `states: [on]` as `[true]` — `_FilterLoader`
 drops the bool resolver so on/off/yes/no stay strings (test added).
 Known limitation: the dwell clock restarts on HA restart (RuleState is in
 memory) — a RestoreEntity for `matched_since` is the fix if it matters.
+
+## 0.2.0 — staged actions (2026-09-27)
+
+`actions.py` `RuleActions`: mode none/notify/notify_then_act/act;
+`on_change(entered, left, active, names)` from the runner. Notify =
+replace-in-place (tag / notification_id `sb_watch_<entry_id>`), clear on
+empty; `notify.*` service or persistent_notification. Act = ONE
+`homeassistant.<act>` on the ENTERED ids (never the whole set);
+notify_then_act schedules per-entity `async_call_later(warn_ahead)` and
+acts only if still active (`set_active_getter`). `switch.<rule>_paused`
+(RestoreEntity) = override: tracking continues, no effects, pending
+timers dropped. `actions_pure.format_message` is HA-free for the tests.
+Config flow: action select, notify_service (must be `notify.*`), act
+select, warn_ahead; validation errors bad_action/bad_notify/bad_act.
+
+### Two bugs the live test found (2026-09-27)
+
+1. **Warn-ahead act ran in the executor.** `async_call_later` with a plain
+   lambda is not a @callback → HA ran it off the event loop →
+   `async_create_task` raised "from a thread other than the event loop".
+   Fix: `HassJob(partial(self._act_if_still, entity_id))` on a @callback.
+2. **Paused restored from a DELETED rule.** RestoreEntity is keyed by
+   entity_id; a rule deleted and re-created under the same name inherited
+   the old switch's "on" and took no action (diagnostics showed
+   `paused: true` on a brand-new entry). Fix: the switch writes `entry_id`
+   as an attribute and only trusts a restored state from its own entry.
+
+Also: `async_remove_entry` clears the rule's notification (deleting a rule
+used to leave its persistent notification behind). Test harness: throwaway
+`input_boolean.sb_watch_test` (WS `input_boolean/create`/`delete`), rules
+via the flow API, diagnostics via `/api/diagnostics/config_entry/<id>`.

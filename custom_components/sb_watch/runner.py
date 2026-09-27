@@ -14,6 +14,7 @@ from homeassistant.util import dt as dt_util
 from custom_components.sb_filter.grammar import parse_duration
 from custom_components.sb_filter.ha import FilterSubscription
 
+from .actions import RuleActions
 from .const import CONF_FOR, CONF_NAME, EVENT_CHANGED
 from .rule import RuleState, build_filter
 
@@ -32,6 +33,8 @@ class RuleRunner:
         self.unreadable: list[str] = []
         self.grammar: int | None = None
         self.last_payload: dict[str, Any] | None = None
+        self.actions = RuleActions(hass, entry.entry_id, self.name, entry.options)
+        self.actions.set_active_getter(lambda: self.state.active)
         self._sub: FilterSubscription | None = None
         self._timer: CALLBACK_TYPE | None = None
         self._listeners: list[Callable[[], None]] = []
@@ -48,6 +51,7 @@ class RuleRunner:
             self._sub.stop()
             self._sub = None
         self._cancel_timer()
+        self.actions.stop()
 
     @callback
     def add_listener(self, cb: Callable[[], None]) -> CALLBACK_TYPE:
@@ -70,6 +74,7 @@ class RuleRunner:
         now = dt_util.utcnow()
         entered, left = self.state.apply(self.matched, now)
         if entered or left:
+            self.actions.on_change(entered, left, self.state.active, self.names())
             self.hass.bus.async_fire(EVENT_CHANGED, {
                 "rule": self.name,
                 "entry_id": self.entry.entry_id,

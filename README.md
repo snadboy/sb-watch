@@ -27,5 +27,16 @@ states: [unavailable, "<20"]
 continuously that long (`10m`, `2h`) — hysteresis for values that flap around a
 threshold. It is separate from the filter's `state_for` (time in the current state).
 
-Actions are automations on the `sb_watch_changed` event, or on the binary sensor.
-Staged actions (notify → notify-then-act → act) are the next step.
+## Actions — staged
+
+| Action | What happens |
+|---|---|
+| **none** | entities and the event only — write your own automation |
+| **notify** | one notification per rule, **replaced in place** as the active set changes and cleared when it empties. `notify.mobile_app_…` with a `tag`, or a persistent notification when no service is given |
+| **notify, then act** | the notification says what will happen; after the **warn-ahead** (`10m`) each entity that is still active gets `homeassistant.<turn_off\|turn_on\|toggle>` |
+| **act** | the act at once on every entity that **enters** |
+
+Acting is always on the entities that just entered, never again on the whole set, so a
+rule can't keep re-firing on something you've handled. `switch.<rule>_paused` is the
+override: on = keep tracking, take no action (it survives restarts). Richer logic
+belongs in an automation on `sb_watch_changed`.
