@@ -93,3 +93,17 @@ up yet) → not matched → `matched_since` dropped → clocks reset. Fix
 + `STARTUP_SETTLE_SECONDS` (60); the entities show the restored count
 meanwhile; `start()` is idempotent. `HassJob` for the timer (a lambda would
 run off-loop — same trap as the warn-ahead).
+
+## 0.4.0 — two-step form (2026-09-28)
+
+`config_flow.py` rewritten: `_TwoStep` mixin shared by config and options
+flows. Step 1 (`user`/`init`): STEP1_KEYS. Step 2 (`values`): `states` =
+`SelectSelector(multiple, custom_value)` with options from
+`sb_filter.ha.values_now(hass, scope)` (label "Clear — off (13 now)", value
+raw), list mode ≤12 options else dropdown, current entries kept selectable;
+`state_min`/`state_max`; a `section("actions", collapsed unless set)` for
+action/notify_service/act/warn_ahead — `_merge` FLATTENS it back so
+`entry.options` stays flat (runner/actions unchanged, legacy rules load).
+`_validate_all` runs `match_now` and turns `unmatched_values` into error
+`unknown_value` with a `{unmatched}` placeholder ("Cleat (did you mean
+Clear?)"). Driven via the flow API in the test.

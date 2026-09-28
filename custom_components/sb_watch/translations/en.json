@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "New SB Watch rule",
+        "title": "SB Watch rule \u2014 what to watch",
         "description": "A rule watches what an SB filter matches. Across fields: AND. Within a field: OR. Nothing configured matches nothing.",
         "data": {
           "name": "Rule name",
@@ -11,24 +11,41 @@
           "areas": "Areas",
           "device_classes": "Device classes (comma-separated)",
           "units": "Units (comma-separated)",
-          "states": "States \u2014 values and/or ranges (comma-separated)",
           "state_for": "In current state for (e.g. 2h, <5m)",
           "for": "Rule dwell \u2014 matched continuously for (e.g. 10m)",
           "problem": "Report as a problem (binary sensor device class)",
-          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)",
-          "action": "Action",
-          "notify_service": "Notify service (notify.\u2026; empty = persistent notification)",
-          "act": "What to do to entities that enter",
-          "warn_ahead": "Warn-ahead \u2014 act this long after notifying (notify-then-act only)"
+          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)"
         },
         "data_description": {
           "patterns": "Words in one pattern AND; patterns OR. * and ? wildcards.",
-          "states": "e.g. unavailable, <20, 40-60",
           "state_for": "Time in the current state, from last_changed; bare number = minutes.",
           "for": "An entity counts only after matching this long \u2014 hysteresis for flapping values.",
-          "filter_yaml": "Paste an SB Entity Browser card's filter keys: patterns, labels, areas, device_classes, units, states, state_min, state_max, state_for.",
-          "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls homeassistant.<act> on the entities that just entered \u2014 never again on the whole set. The rule's Paused switch stops both.",
-          "warn_ahead": "e.g. 10m. 0 = act at once after notifying."
+          "filter_yaml": "Paste an SB Entity Browser card's filter keys: patterns, labels, areas, device_classes, units, states, state_min, state_max, state_for."
+        }
+      },
+      "values": {
+        "title": "States and actions",
+        "description": "Tick the states to match \u2014 the number is how many selected entities are in each now. Type a range or number (<20, >=80, 40-60, 100) as a custom entry.\n\n{unmatched}",
+        "data": {
+          "states": "States",
+          "state_min": "Numeric state \u2265 (shorthand range)",
+          "state_max": "Numeric state \u2264"
+        },
+        "sections": {
+          "actions": {
+            "name": "Actions",
+            "description": "Optional: what the rule does when something becomes active.",
+            "data": {
+              "action": "Action",
+              "notify_service": "Notify service (notify.\u2026; empty = persistent notification)",
+              "act": "What to do to entities that enter",
+              "warn_ahead": "Warn-ahead \u2014 act this long after notifying (notify-then-act only)"
+            },
+            "data_description": {
+              "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls homeassistant.<act> on the entities that just entered. The rule's Paused switch stops both.",
+              "warn_ahead": "e.g. 10m. 0 = act at once after notifying."
+            }
+          }
         }
       }
     },
@@ -38,14 +55,15 @@
       "bad_duration": "Unreadable duration \u2014 use 2h, 1h30m, 90s, <5m or a number of minutes.",
       "bad_action": "Unknown action.",
       "bad_notify": "A notify service looks like notify.mobile_app_phone.",
-      "bad_act": "Choose what to do: turn off, turn on or toggle."
+      "bad_act": "Choose what to do: turn off, turn on or toggle.",
+      "unknown_value": "A state no selected entity can be in: {unmatched}"
     },
     "abort": {}
   },
   "options": {
     "step": {
       "init": {
-        "title": "SB Watch rule",
+        "title": "SB Watch rule \u2014 what to watch",
         "data": {
           "name": "Rule name",
           "patterns": "Entity patterns (comma-separated)",
@@ -53,19 +71,36 @@
           "areas": "Areas",
           "device_classes": "Device classes (comma-separated)",
           "units": "Units (comma-separated)",
-          "states": "States \u2014 values and/or ranges (comma-separated)",
           "state_for": "In current state for (e.g. 2h, <5m)",
           "for": "Rule dwell \u2014 matched continuously for (e.g. 10m)",
           "problem": "Report as a problem (binary sensor device class)",
-          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)",
-          "action": "Action",
-          "notify_service": "Notify service (notify.\u2026; empty = persistent notification)",
-          "act": "What to do to entities that enter",
-          "warn_ahead": "Warn-ahead \u2014 act this long after notifying (notify-then-act only)"
+          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)"
         },
-        "data_description": {
-          "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls homeassistant.<act> on the entities that just entered \u2014 never again on the whole set. The rule's Paused switch stops both.",
-          "warn_ahead": "e.g. 10m. 0 = act at once after notifying."
+        "data_description": {}
+      },
+      "values": {
+        "title": "States and actions",
+        "description": "Tick the states to match \u2014 the number is how many selected entities are in each now. Type a range or number (<20, >=80, 40-60, 100) as a custom entry.\n\n{unmatched}",
+        "data": {
+          "states": "States",
+          "state_min": "Numeric state \u2265 (shorthand range)",
+          "state_max": "Numeric state \u2264"
+        },
+        "sections": {
+          "actions": {
+            "name": "Actions",
+            "description": "Optional: what the rule does when something becomes active.",
+            "data": {
+              "action": "Action",
+              "notify_service": "Notify service (notify.\u2026; empty = persistent notification)",
+              "act": "What to do to entities that enter",
+              "warn_ahead": "Warn-ahead \u2014 act this long after notifying (notify-then-act only)"
+            },
+            "data_description": {
+              "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls homeassistant.<act> on the entities that just entered. The rule's Paused switch stops both.",
+              "warn_ahead": "e.g. 10m. 0 = act at once after notifying."
+            }
+          }
         }
       }
     },
@@ -75,7 +110,8 @@
       "bad_duration": "Unreadable duration \u2014 use 2h, 1h30m, 90s, <5m or a number of minutes.",
       "bad_action": "Unknown action.",
       "bad_notify": "A notify service looks like notify.mobile_app_phone.",
-      "bad_act": "Choose what to do: turn off, turn on or toggle."
+      "bad_act": "Choose what to do: turn off, turn on or toggle.",
+      "unknown_value": "A state no selected entity can be in: {unmatched}"
     }
   },
   "services": {

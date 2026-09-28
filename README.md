@@ -13,9 +13,16 @@ Requires the SB Filter integration (declared as a dependency; install it first).
 
 ## A rule
 
-*Settings → Devices & services → Add integration → SB Watch.* Pickers for labels and
-areas, text for the rest, and an **advanced YAML field** that takes an SB Entity
-Browser card's filter keys verbatim and overrides the fields:
+*Settings → Devices & services → Add integration → SB Watch.* Two steps:
+
+1. **What to watch** — pickers for labels and areas, text for patterns, device
+   classes, units, time-in-state and the rule's dwell, and an **advanced YAML
+   field** that takes an SB Entity Browser card's filter keys verbatim and
+   overrides the fields:
+2. **States and actions** — the states as a multi-select built live from the
+   vocabulary of what step 1 selects (translated label, live count, raw value
+   stored); type a range or number as a custom entry. A word no selected entity
+   can be in is rejected with a did-you-mean. Actions sit in a collapsed section.
 
 ```yaml
 device_classes: [battery]
