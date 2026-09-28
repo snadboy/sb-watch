@@ -73,4 +73,9 @@ class CountSensor(SensorEntity, RestoreEntity):
             "configured": r.configured,
             "unreadable": r.unreadable,
             "grammar": r.grammar,
+            "action": r.actions.mode,
+            "act": r.actions.act,
+            "act_script": r.actions.act_script,
+            "last_action": r.actions.last_action,
+            "actions_taken": r.actions.actions_taken,
         }

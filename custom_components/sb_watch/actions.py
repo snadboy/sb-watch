@@ -20,7 +20,11 @@ from homeassistant.helpers.event import async_call_later
 
 from custom_components.sb_filter.grammar import parse_duration
 
-from .const import CONF_ACT, CONF_ACTION, CONF_NOTIFY_SERVICE, CONF_WARN_AHEAD
+import logging
+
+from .const import CONF_ACT, CONF_ACT_SCRIPT, CONF_ACTION, CONF_NOTIFY_SERVICE, CONF_WARN_AHEAD, EVENT_ACTION
+
+_LOGGER = logging.getLogger(__name__)
 
 from .actions_pure import format_message  # noqa: E402  (HA-free, shared with the tests)
 
@@ -33,6 +37,9 @@ class RuleActions:
         self.mode = options.get(CONF_ACTION) or "none"
         self.notify_service = (options.get(CONF_NOTIFY_SERVICE) or "").strip()
         self.act = options.get(CONF_ACT) or None
+        self.act_script = (options.get(CONF_ACT_SCRIPT) or "").strip() or None
+        self.last_action_at = None
+        self.actions_taken = 0
         warn = parse_duration(options.get(CONF_WARN_AHEAD))
         self.warn_seconds = warn.seconds if warn else 0.0
         self.paused = False
@@ -102,12 +109,36 @@ class RuleActions:
     # ---- the two effects ------------------------------------------------------
     @callback
     def _do_act(self, entity_ids: list[str]) -> None:
+        """One service call on the entities that just entered, logged three ways:
+        the Logbook (on each entity, so the state change has a 'why'), the
+        sb_watch_action event, and the rule's last-action attributes."""
         if not self.act or not entity_ids:
             return
-        self.last_action = {"act": self.act, "entity_ids": entity_ids}
-        self.hass.async_create_task(
-            self.hass.services.async_call("homeassistant", self.act, {"entity_id": entity_ids}, blocking=False)
-        )
+        from homeassistant.util import dt as dt_util  # noqa: PLC0415
+        names = []
+        for e in entity_ids:
+            st = self.hass.states.get(e)
+            names.append((st.attributes.get("friendly_name") if st else None) or e)
+        if self.act == "run_script":
+            if not self.act_script:
+                _LOGGER.warning("SB Watch rule %s: run_script without a script", self.name)
+                return
+            what = f"ran {self.act_script}"
+            call = ("script", "turn_on", {"entity_id": self.act_script, "variables": {"entity_id": entity_ids[0], "entity_ids": entity_ids, "rule": self.name}})
+        else:
+            what = self.act.replace("_", " ")
+            call = ("homeassistant", self.act, {"entity_id": entity_ids})
+        self.last_action = {"act": self.act, "script": self.act_script, "entity_ids": entity_ids, "at": dt_util.utcnow().isoformat(timespec="seconds")}
+        self.last_action_at = dt_util.utcnow()
+        self.actions_taken += 1
+        _LOGGER.info("SB Watch rule %s: %s → %s", self.name, what, ", ".join(names))
+        self.hass.async_create_task(self.hass.services.async_call(*call, blocking=False))
+        for e, n in zip(entity_ids, names):
+            self.hass.async_create_task(self.hass.services.async_call("logbook", "log", {
+                "name": "SB Watch", "entity_id": e, "domain": "sb_watch",
+                "message": f"{what} by rule “{self.name}”" if self.act != "run_script" else f"rule “{self.name}” {what} for {n}",
+            }, blocking=False))
+        self.hass.bus.async_fire(EVENT_ACTION, {"rule": self.name, "entry_id": self.entry_id, "act": self.act, "script": self.act_script, "entity_ids": entity_ids, "names": names})
 
     @callback
     def _notify(self, message: str) -> None:

@@ -21,10 +21,12 @@ CONF_PROBLEM = "problem"          # binary sensor device_class problem (on = som
 # actions (entry.options)
 CONF_ACTION = "action"             # none | notify | notify_then_act | act
 CONF_NOTIFY_SERVICE = "notify_service"   # "notify.mobile_app_x"; empty = a persistent notification
-CONF_ACT = "act"                   # turn_off | turn_on | toggle  (homeassistant.<act> on the entered entities)
+CONF_ACT = "act"                   # turn_off | turn_on | toggle | run_script
+CONF_ACT_SCRIPT = "act_script"     # run_script: the script entity to run (variables: entity_id, entity_ids, rule)
+EVENT_ACTION = "sb_watch_action"
 CONF_WARN_AHEAD = "warn_ahead"     # notify_then_act: act this long after the notification, if still active
 ACTIONS = ("none", "notify", "notify_then_act", "act")
-ACTS = ("turn_off", "turn_on", "toggle")
+ACTS = ("turn_off", "turn_on", "toggle", "run_script")
 
 FILTER_FIELDS = (CONF_PATTERNS, CONF_LABELS, CONF_AREAS, CONF_DEVICE_CLASSES, CONF_UNITS, CONF_STATES, CONF_STATE_FOR, CONF_RATE, CONF_RATE_WINDOW)
 DWELL_TICK_SECONDS = 30

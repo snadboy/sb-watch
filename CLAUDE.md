@@ -129,3 +129,13 @@ brand-new rule's first evaluation enters everything it finds. Tests
 updated (+ restored-set case).
 
 Also 0.5.2: unloading a rule after startup logged "Unable to remove unknown job listener" — the one-time HOMEASSISTANT_STARTED listener had already removed itself; the unload hook now skips it once fired.
+
+## 0.6.0 — run_script act + action logging (2026-09-28)
+
+User: actions at timeout = Turn on / Turn off / Toggle / Run script; "are
+timeout actions logged?". `act: run_script` + `act_script` (script entity
+picker; `script.turn_on` with variables entity_id/entity_ids/rule).
+Every act now: `logbook.log` on EACH acted entity (name "SB Watch",
+message "turn off by rule “X”"), a `sb_watch_action` event, INFO log line,
+and Count-sensor attributes `action/act/act_script/last_action{at}/
+actions_taken`. Flow validation `bad_script`.
