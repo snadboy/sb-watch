@@ -24,13 +24,13 @@ from custom_components.sb_filter.ha import match_now, values_now
 
 from .const import (
     ACTIONS, ACTS, CONF_ACT, CONF_ACTION, CONF_AREAS, CONF_DEVICE_CLASSES, CONF_FILTER_YAML, CONF_FOR,
-    CONF_LABELS, CONF_NAME, CONF_NOTIFY_SERVICE, CONF_PATTERNS, CONF_PROBLEM, CONF_STATE_FOR, CONF_STATES,
-    CONF_UNITS, CONF_WARN_AHEAD, DOMAIN,
+    CONF_LABELS, CONF_NAME, CONF_NOTIFY_SERVICE, CONF_PATTERNS, CONF_PROBLEM, CONF_RATE, CONF_RATE_WINDOW,
+    CONF_STATE_FOR, CONF_STATES, CONF_UNITS, CONF_WARN_AHEAD, DOMAIN,
 )
 from .rule import build_filter, split_list
 
 STEP1_KEYS = (CONF_NAME, CONF_PATTERNS, CONF_LABELS, CONF_AREAS, CONF_DEVICE_CLASSES, CONF_UNITS,
-              CONF_STATE_FOR, CONF_FOR, CONF_PROBLEM, CONF_FILTER_YAML)
+              CONF_STATE_FOR, CONF_RATE, CONF_RATE_WINDOW, CONF_FOR, CONF_PROBLEM, CONF_FILTER_YAML)
 ACTION_KEYS = (CONF_ACTION, CONF_NOTIFY_SERVICE, CONF_ACT, CONF_WARN_AHEAD)
 
 
@@ -43,6 +43,8 @@ def _step1_schema(d: dict[str, Any]) -> vol.Schema:
         vol.Optional(CONF_DEVICE_CLASSES, default=d.get(CONF_DEVICE_CLASSES, "")): selector.TextSelector(),
         vol.Optional(CONF_UNITS, default=d.get(CONF_UNITS, "")): selector.TextSelector(),
         vol.Optional(CONF_STATE_FOR, default=d.get(CONF_STATE_FOR, "")): selector.TextSelector(),
+        vol.Optional(CONF_RATE, default=d.get(CONF_RATE, "")): selector.TextSelector(),
+        vol.Optional(CONF_RATE_WINDOW, default=d.get(CONF_RATE_WINDOW, "")): selector.TextSelector(),
         vol.Optional(CONF_FOR, default=d.get(CONF_FOR, "")): selector.TextSelector(),
         vol.Optional(CONF_PROBLEM, default=d.get(CONF_PROBLEM, True)): selector.BooleanSelector(),
         vol.Optional(CONF_FILTER_YAML, default=d.get(CONF_FILTER_YAML, "")): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
@@ -52,7 +54,7 @@ def _step1_schema(d: dict[str, Any]) -> vol.Schema:
 def _scope(step1: dict[str, Any]) -> dict[str, Any]:
     """The filter without its state terms: what the values are drawn from."""
     cfg = build_filter({**step1, CONF_STATES: None})
-    for k in ("states", "state_min", "state_max", "state_for"):
+    for k in ("states", "state_min", "state_max", "state_for", "rate", "rate_window"):
         cfg.pop(k, None)
     return cfg
 
@@ -92,8 +94,13 @@ def _validate_step1(user_input: dict[str, Any]) -> dict[str, str]:
     except Exception:  # noqa: BLE001
         return {CONF_FILTER_YAML: "bad_yaml"}
     flt = parse_filter(cfg)
-    if flt.unreadable:
-        errors[CONF_STATE_FOR] = "bad_duration"
+    for item in flt.unreadable:
+        if item.startswith("rate:"):
+            errors[CONF_RATE] = "bad_rate"
+        elif item.startswith("rate_window:"):
+            errors[CONF_RATE_WINDOW] = "bad_duration"
+        else:
+            errors[CONF_STATE_FOR] = "bad_duration"
     if user_input.get(CONF_FOR) and parse_duration(user_input[CONF_FOR]) is None:
         errors[CONF_FOR] = "bad_duration"
     return errors

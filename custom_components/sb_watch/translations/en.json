@@ -14,13 +14,16 @@
           "state_for": "In current state for (e.g. 2h, <5m)",
           "for": "Rule dwell \u2014 matched continuously for (e.g. 10m)",
           "problem": "Report as a problem (binary sensor device class)",
-          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)"
+          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)",
+          "rate": "Rate of change (e.g. >0.5/h, <-2/h)",
+          "rate_window": "Rate window (default = the rate's unit)"
         },
         "data_description": {
           "patterns": "Words in one pattern AND; patterns OR. * and ? wildcards.",
           "state_for": "Time in the current state, from last_changed; bare number = minutes.",
           "for": "An entity counts only after matching this long \u2014 hysteresis for flapping values.",
-          "filter_yaml": "Paste an SB Entity Browser card's filter keys: patterns, labels, areas, device_classes, units, states, state_min, state_max, state_for."
+          "filter_yaml": "Paste an SB Entity Browser card's filter keys: patterns, labels, areas, device_classes, units, states, state_min, state_max, state_for.",
+          "rate": "Change per minute/hour/day of a numeric state; comparator required; entries ORed. A sensor needs history at least as old as the window."
         }
       },
       "values": {
@@ -56,7 +59,8 @@
       "bad_action": "Unknown action.",
       "bad_notify": "A notify service looks like notify.mobile_app_phone.",
       "bad_act": "Choose what to do: turn off, turn on or toggle.",
-      "unknown_value": "A state no selected entity can be in: {unmatched}"
+      "unknown_value": "A state no selected entity can be in: {unmatched}",
+      "bad_rate": "Unreadable rate \u2014 use >0.5/h, <=-2/h, >=1/m, <0.1/d."
     },
     "abort": {}
   },
@@ -74,9 +78,13 @@
           "state_for": "In current state for (e.g. 2h, <5m)",
           "for": "Rule dwell \u2014 matched continuously for (e.g. 10m)",
           "problem": "Report as a problem (binary sensor device class)",
-          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)"
+          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)",
+          "rate": "Rate of change (e.g. >0.5/h, <-2/h)",
+          "rate_window": "Rate window (default = the rate's unit)"
         },
-        "data_description": {}
+        "data_description": {
+          "rate": "Change per minute/hour/day of a numeric state; comparator required; entries ORed. A sensor needs history at least as old as the window."
+        }
       },
       "values": {
         "title": "States and actions",
@@ -111,7 +119,8 @@
       "bad_action": "Unknown action.",
       "bad_notify": "A notify service looks like notify.mobile_app_phone.",
       "bad_act": "Choose what to do: turn off, turn on or toggle.",
-      "unknown_value": "A state no selected entity can be in: {unmatched}"
+      "unknown_value": "A state no selected entity can be in: {unmatched}",
+      "bad_rate": "Unreadable rate \u2014 use >0.5/h, <=-2/h, >=1/m, <0.1/d."
     }
   },
   "services": {

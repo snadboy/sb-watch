@@ -16,7 +16,7 @@ Requires the SB Filter integration (declared as a dependency; install it first).
 *Settings → Devices & services → Add integration → SB Watch.* Two steps:
 
 1. **What to watch** — pickers for labels and areas, text for patterns, device
-   classes, units, time-in-state and the rule's dwell, and an **advanced YAML
+   classes, units, time-in-state, **rate of change** (`>0.5/h`) and the rule's dwell, and an **advanced YAML
    field** that takes an SB Entity Browser card's filter keys verbatim and
    overrides the fields:
 2. **States and actions** — the states as a multi-select built live from the

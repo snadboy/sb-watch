@@ -107,3 +107,9 @@ action/notify_service/act/warn_ahead — `_merge` FLATTENS it back so
 `_validate_all` runs `match_now` and turns `unmatched_values` into error
 `unknown_value` with a `{unmatched}` placeholder ("Cleat (did you mean
 Clear?)"). Driven via the flow API in the test.
+
+## 0.5.0 — rate fields (2026-09-28)
+
+Step 1 gains `rate` (comma list) and `rate_window`; `build_filter` passes
+them through; unreadable → `bad_rate` / `bad_duration` on the right field.
+Nothing else: the runner hands the filter to SB Filter, which owns rates.

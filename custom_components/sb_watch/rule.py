@@ -50,6 +50,11 @@ def build_filter(options: dict[str, Any]) -> dict[str, Any]:
             cfg[key] = lst
     if options.get("state_for"):
         cfg["state_for"] = str(options["state_for"]).strip()
+    rate = split_list(options.get("rate"))
+    if rate:
+        cfg["rate"] = rate
+    if options.get("rate_window"):
+        cfg["rate_window"] = str(options["rate_window"]).strip()
     raw = options.get("filter_yaml")
     if raw and str(raw).strip():
         parsed = yaml.load(str(raw), Loader=_FilterLoader)
