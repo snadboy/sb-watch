@@ -70,7 +70,7 @@ class RuleRunner:
     def start(self) -> None:
         if self._sub is not None:
             return
-        self._sub = FilterSubscription(self.hass, self.filter_config, self._on_filter)
+        self._sub = FilterSubscription(self.hass, self.filter_config, self._on_filter, origin=f"rule: {self.name}")
         self._sub.start()
 
     @callback

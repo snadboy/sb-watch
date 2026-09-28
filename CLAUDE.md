@@ -113,3 +113,7 @@ Clear?)"). Driven via the flow API in the test.
 Step 1 gains `rate` (comma list) and `rate_window`; `build_filter` passes
 them through; unreadable → `bad_rate` / `bad_duration` on the right field.
 Nothing else: the runner hands the filter to SB Filter, which owns rates.
+
+## 0.5.1 (2026-09-28)
+
+Rule subscriptions carry `origin="rule: <name>"` for SB Filter's Live filters sensor.
