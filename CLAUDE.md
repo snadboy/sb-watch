@@ -117,3 +117,15 @@ Nothing else: the runner hands the filter to SB Filter, which owns rates.
 ## 0.5.1 (2026-09-28)
 
 Rule subscriptions carry `origin="rule: <name>"` for SB Filter's Live filters sensor.
+
+## 0.5.2 — a new rule acts on what it finds (2026-09-28)
+
+User added the desk bulb (on for 1 h 50 min) with a 1-minute timeout via
+the card: "Turn off failed". Diagnostics: active=[bulb], last_action=None
+— the first evaluation was treated as a BASELINE and never "entered"
+anything, so no action was scheduled. Now only a RESTORED rule (restore()
+sets `baselined` + `active`) compares against its previous set; a
+brand-new rule's first evaluation enters everything it finds. Tests
+updated (+ restored-set case).
+
+Also 0.5.2: unloading a rule after startup logged "Unable to remove unknown job listener" — the one-time HOMEASSISTANT_STARTED listener had already removed itself; the unload hook now skips it once fired.

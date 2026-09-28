@@ -38,9 +38,9 @@ def test_build_filter_fields_and_yaml_override():
         pass
 
 
-def test_no_dwell_baseline_then_changes():
+def test_no_dwell_first_evaluation_enters():
     s = rule.RuleState(dwell_seconds=0)
-    assert s.apply(["b", "a"], t(0)) == ((), ())          # first evaluation is a baseline, never an "enter"
+    assert s.apply(["b", "a"], t(0)) == (("a", "b"), ())  # a brand-new rule: what it finds has just entered
     assert s.active == ("a", "b")
     assert s.active_since == t(0)
     assert s.apply(["a", "c"], t(5)) == (("c",), ("b",))
@@ -50,9 +50,16 @@ def test_no_dwell_baseline_then_changes():
     assert s.active_since == t(10)
 
 
+def test_restored_rule_does_not_reenter_unchanged_set():
+    s = rule.RuleState(dwell_seconds=0)
+    s.active = ("a", "b"); s.matched_since = {"a": t(-100), "b": t(-100)}; s.baselined = True   # as restore() leaves it
+    assert s.apply(["a", "b"], t(0)) == ((), ())
+    assert s.apply(["a", "b", "c"], t(1)) == (("c",), ())
+
+
 def test_dwell_promotes_after_continuous_match():
     s = rule.RuleState(dwell_seconds=600)
-    assert s.apply(["x"], t(0)) == ((), ())
+    assert s.apply(["x"], t(0)) == ((), ())                 # nothing active yet: still dwelling
     assert s.active == ()                                   # matched, not yet active
     assert s.next_promotion(t(0)) == 600
     assert s.apply(["x"], t(300)) == ((), ())

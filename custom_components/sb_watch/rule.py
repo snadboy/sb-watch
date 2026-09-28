@@ -76,7 +76,7 @@ class RuleState:
     matched_since: dict[str, datetime] = field(default_factory=dict)
     active: tuple[str, ...] = ()
     active_since: datetime | None = None    # when the active set last became non-empty
-    baselined: bool = False                 # the first evaluation never "enters" anything
+    baselined: bool = False                 # True once evaluated or restored (restore() pre-seeds active)
 
     def apply(self, matched: list[str] | tuple[str, ...], now: datetime) -> tuple[tuple[str, ...], tuple[str, ...]]:
         """Feed the current match set; returns (entered, left) relative to the previous ACTIVE set."""
@@ -98,9 +98,12 @@ class RuleState:
             self.active_since = now
         elif not new_active:
             self.active_since = None
-        if not self.baselined:
-            self.baselined = True
-            return (), ()
+        # A restored rule (restore() set `baselined`) compares against the set it
+        # held before the restart, so an unchanged set enters nothing. A BRAND-NEW
+        # rule has no past: everything it finds on its first evaluation has just
+        # entered — that is how "the bulb has been on for two hours, add a rule"
+        # turns the bulb off.
+        self.baselined = True
         return entered, left
 
     def next_promotion(self, now: datetime) -> float | None:

@@ -50,15 +50,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if hass.state is CoreState.running:
         runner.start()
     else:
+        fired = False
+
         @callback
         def _settled(_now) -> None:
             runner.start()
 
         @callback
         def _started(_event) -> None:
+            nonlocal fired
+            fired = True
             entry.async_on_unload(async_call_later(hass, STARTUP_SETTLE_SECONDS, HassJob(_settled, cancel_on_shutdown=True)))
 
-        entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _started))
+        unsub_started = hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _started)
+        # a one-time listener removes itself when it fires; unsubscribing it again logs an error
+        entry.async_on_unload(lambda: None if fired else unsub_started())
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
     return True
 
