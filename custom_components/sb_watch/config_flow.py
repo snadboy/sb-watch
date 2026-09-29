@@ -26,12 +26,14 @@ from .const import (
     ACTIONS, ACTS, CONF_ACT, CONF_ACT_ACTIONS, CONF_ACT_SCRIPT, CONF_ACTION, CONF_AREAS, CONF_DEVICE_CLASSES, CONF_FILTER_YAML, CONF_FOR,
     CONF_LABELS, CONF_NAME, CONF_NOTIFY_SERVICE, CONF_NOTIFY_URL, CONF_PATTERNS, CONF_PROBLEM, CONF_RATE, CONF_RATE_WINDOW,
     CONF_STATE_FOR, CONF_STATES, CONF_UNITS, CONF_WARN_AHEAD, DOMAIN,
+    CONF_DAYS, CONF_DAYS_ENABLED, CONF_WINDOW_ENABLED, CONF_WINDOW_END, CONF_WINDOW_START, WEEKDAYS,
 )
 from .rule import build_filter, split_list
 
 STEP1_KEYS = (CONF_NAME, CONF_PATTERNS, CONF_LABELS, CONF_AREAS, CONF_DEVICE_CLASSES, CONF_UNITS,
               CONF_STATE_FOR, CONF_RATE, CONF_RATE_WINDOW, CONF_FOR, CONF_PROBLEM, CONF_FILTER_YAML)
 ACTION_KEYS = (CONF_ACTION, CONF_NOTIFY_SERVICE, CONF_NOTIFY_URL, CONF_ACT, CONF_ACT_SCRIPT, CONF_ACT_ACTIONS, CONF_WARN_AHEAD)
+EFFECT_KEYS = (CONF_WINDOW_ENABLED, CONF_WINDOW_START, CONF_WINDOW_END, CONF_DAYS_ENABLED, CONF_DAYS)
 
 
 def _step1_schema(d: dict[str, Any]) -> vol.Schema:
@@ -69,11 +71,20 @@ def _step2_schema(hass, step1: dict[str, Any], d: dict[str, Any]) -> vol.Schema:
         if s.lower() not in known:
             options.append({"value": s, "label": s}); known.add(s.lower())
     actions = d.get("actions") or {k: d.get(k) for k in ACTION_KEYS}
+    eff = d.get("effect") or {k: d.get(k) for k in EFFECT_KEYS}
     return vol.Schema({
         vol.Optional(CONF_STATES, default=current): selector.SelectSelector(selector.SelectSelectorConfig(
             options=options, multiple=True, custom_value=True, mode=selector.SelectSelectorMode.LIST if len(options) <= 12 else selector.SelectSelectorMode.DROPDOWN)),
         vol.Optional("state_min", default=d.get("state_min", "")): selector.TextSelector(),
         vol.Optional("state_max", default=d.get("state_max", "")): selector.TextSelector(),
+        vol.Optional("effect"): section(vol.Schema({
+            vol.Optional(CONF_WINDOW_ENABLED, default=bool(eff.get(CONF_WINDOW_ENABLED))): selector.BooleanSelector(),
+            vol.Optional(CONF_WINDOW_START, default=eff.get(CONF_WINDOW_START) or "18:00:00"): selector.TimeSelector(),
+            vol.Optional(CONF_WINDOW_END, default=eff.get(CONF_WINDOW_END) or "06:00:00"): selector.TimeSelector(),
+            vol.Optional(CONF_DAYS_ENABLED, default=bool(eff.get(CONF_DAYS_ENABLED))): selector.BooleanSelector(),
+            vol.Optional(CONF_DAYS, default=list(eff.get(CONF_DAYS) or [])): selector.SelectSelector(selector.SelectSelectorConfig(
+                options=[{"value": d, "label": l} for d, l in zip(WEEKDAYS, ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"))], multiple=True, mode=selector.SelectSelectorMode.LIST)),
+        }), {"collapsed": not (eff.get(CONF_WINDOW_ENABLED) or eff.get(CONF_DAYS_ENABLED))}),
         vol.Optional("actions"): section(vol.Schema({
             vol.Optional(CONF_ACTION, default=actions.get(CONF_ACTION) or "none"): selector.SelectSelector(selector.SelectSelectorConfig(
                 options=[{"value": a, "label": l} for a, l in (("none", "No action (entities and event only)"), ("notify", "Notify"),
@@ -111,8 +122,10 @@ def _validate_step1(user_input: dict[str, Any]) -> dict[str, str]:
 
 def _merge(step1: dict[str, Any], step2: dict[str, Any]) -> dict[str, Any]:
     actions = step2.get("actions") or {}
+    eff = step2.get("effect") or {}
     out = {**step1, CONF_STATES: split_list(step2.get(CONF_STATES)),
-           "state_min": step2.get("state_min") or "", "state_max": step2.get("state_max") or "", **{k: actions.get(k) for k in ACTION_KEYS}}
+           "state_min": step2.get("state_min") or "", "state_max": step2.get("state_max") or "",
+           **{k: actions.get(k) for k in ACTION_KEYS}, **{k: eff.get(k) for k in EFFECT_KEYS}}
     out[CONF_NAME] = str(out.get(CONF_NAME, "")).strip()
     return out
 

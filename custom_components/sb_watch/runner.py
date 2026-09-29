@@ -7,7 +7,7 @@ from datetime import timedelta
 from typing import Any, Callable
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
+from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant, callback
 from homeassistant.helpers.event import async_call_later
 from homeassistant.util import dt as dt_util
 
@@ -16,7 +16,7 @@ from custom_components.sb_filter.ha import FilterSubscription
 
 from .actions import RuleActions
 from .const import CONF_FOR, CONF_NAME, EVENT_CHANGED
-from .rule import RuleState, build_filter
+from .rule import Effect, RuleState, build_filter
 
 
 class RuleRunner:
@@ -28,6 +28,8 @@ class RuleRunner:
         dwell = parse_duration(entry.options.get(CONF_FOR))
         self.dwell_seconds = dwell.seconds if dwell else 0.0
         self.state = RuleState(dwell_seconds=self.dwell_seconds)
+        self.effect = Effect.from_options(entry.options)
+        self._effect_timer: CALLBACK_TYPE | None = None
         self.matched: tuple[str, ...] = ()
         self.configured: bool = True
         self.unreadable: list[str] = []
@@ -79,6 +81,9 @@ class RuleRunner:
             self._sub.stop()
             self._sub = None
         self._cancel_timer()
+        if self._effect_timer:
+            self._effect_timer()
+            self._effect_timer = None
         self.actions.stop()
 
     @callback
@@ -96,11 +101,19 @@ class RuleRunner:
         self.grammar = payload.get("grammar")
         self._evaluate()
 
+    @property
+    def in_effect(self) -> bool:
+        return self.effect.in_effect(dt_util.now())
+
     @callback
     def _evaluate(self, _now=None) -> None:
         self._cancel_timer()
         now = dt_util.utcnow()
-        entered, left = self.state.apply(self.matched, now)
+        # Outside the window / on another day the rule sees nothing: Active off,
+        # Count 0, no actions. When the window opens, whatever matches then ENTERS.
+        gated = self.matched if self.in_effect else ()
+        entered, left = self.state.apply(gated, now)
+        self._arm_effect_timer()
         if entered or left:
             self.actions.on_change(entered, left, self.state.active, self.names())
             self.hass.bus.async_fire(EVENT_CHANGED, {
@@ -122,6 +135,23 @@ class RuleRunner:
         if self._timer:
             self._timer()
             self._timer = None
+
+    @callback
+    def _arm_effect_timer(self) -> None:
+        """Re-evaluate at the next window edge or midnight, so the gate flips on time."""
+        if self._effect_timer:
+            self._effect_timer()
+            self._effect_timer = None
+        nxt = self.effect.next_change(dt_util.now())
+        if nxt is None:
+            return
+        delay = max(1.0, (nxt - dt_util.now()).total_seconds())
+        self._effect_timer = async_call_later(self.hass, delay, HassJob(self._on_effect_edge, cancel_on_shutdown=True))
+
+    @callback
+    def _on_effect_edge(self, _now=None) -> None:
+        self._effect_timer = None
+        self._evaluate()
 
     # ---- for entities -------------------------------------------------------
     @property

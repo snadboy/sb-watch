@@ -18,6 +18,14 @@ CONF_FOR = "for"                 # rule-level dwell: matched continuously this l
 CONF_FILTER_YAML = "filter_yaml"  # advanced: a YAML mapping in the FILTER.md grammar; overrides the fields
 CONF_PROBLEM = "problem"          # binary sensor device_class problem (on = something needs attention)
 
+# when the rule is in effect (entry.options) — both optional, ANDed
+CONF_WINDOW_ENABLED = "window_enabled"
+CONF_WINDOW_START = "window_start"     # "18:00:00"
+CONF_WINDOW_END = "window_end"         # "06:00:00" — may be earlier than start (crosses midnight)
+CONF_DAYS_ENABLED = "days_enabled"
+CONF_DAYS = "days"                     # ["mon", …]; for a window crossing midnight the day is the one it STARTED on
+WEEKDAYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
+
 # actions (entry.options)
 CONF_ACTION = "action"             # none | notify | notify_then_act | act
 CONF_NOTIFY_SERVICE = "notify_service"   # "notify.mobile_app_x"; empty = a persistent notification

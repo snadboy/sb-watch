@@ -8,7 +8,7 @@ it has matched continuously for `for` — and reports what entered and left.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 import yaml
@@ -66,6 +66,90 @@ def build_filter(options: dict[str, Any]) -> dict[str, Any]:
             else:
                 cfg[k] = v
     return cfg
+
+
+WEEKDAYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
+
+
+def _hm(v: Any) -> tuple[int, int] | None:
+    """'18:00' / '18:00:00' → (18, 0)."""
+    if v is None or v == "":
+        return None
+    parts = str(v).strip().split(":")
+    try:
+        h, m = int(parts[0]), int(parts[1]) if len(parts) > 1 else 0
+    except (ValueError, IndexError):
+        return None
+    if not (0 <= h <= 23 and 0 <= m <= 59):
+        return None
+    return h, m
+
+
+@dataclass(frozen=True)
+class Effect:
+    """When a rule is in effect: an optional daily window (may cross midnight)
+    AND an optional set of weekdays. Both absent = always."""
+
+    start: tuple[int, int] | None = None
+    end: tuple[int, int] | None = None
+    days: frozenset[str] = frozenset()
+
+    @classmethod
+    def from_options(cls, o: dict[str, Any]) -> "Effect":
+        start = end = None
+        if o.get("window_enabled"):
+            start, end = _hm(o.get("window_start")), _hm(o.get("window_end"))
+            if start is None or end is None or start == end:
+                start = end = None          # unreadable or empty window: no window
+        days = frozenset(d for d in (o.get("days") or []) if d in WEEKDAYS) if o.get("days_enabled") else frozenset()
+        if o.get("days_enabled") and not days:
+            days = frozenset(WEEKDAYS)      # "on these days" with none ticked would mean never; treat as every day
+        return cls(start=start, end=end, days=days)
+
+    @property
+    def always(self) -> bool:
+        return self.start is None and not self.days
+
+    def _in_window(self, local: datetime) -> tuple[bool, int]:
+        """(inside?, day offset of the window's start: 0 today, -1 yesterday)."""
+        if self.start is None:
+            return True, 0
+        now = (local.hour, local.minute)
+        if self.start < self.end:                       # same day, e.g. 09:00-17:00
+            return self.start <= now < self.end, 0
+        # crosses midnight, e.g. 18:00-06:00
+        if now >= self.start:
+            return True, 0
+        if now < self.end:
+            return True, -1
+        return False, 0
+
+    def in_effect(self, local: datetime) -> bool:
+        inside, offset = self._in_window(local)
+        if not inside:
+            return False
+        if self.days:
+            day = WEEKDAYS[(local.weekday() + offset) % 7]
+            if day not in self.days:
+                return False
+        return True
+
+    def next_change(self, local: datetime) -> datetime | None:
+        """The next local time the answer could change (a window edge or midnight), or None if always."""
+        if self.always:
+            return None
+        candidates = []
+        base = local.replace(second=0, microsecond=0)
+        for hm in (self.start, self.end):
+            if hm is None:
+                continue
+            t = base.replace(hour=hm[0], minute=hm[1])
+            if t <= local:
+                t += timedelta(days=1)
+            candidates.append(t)
+        if self.days:
+            candidates.append((base + timedelta(days=1)).replace(hour=0, minute=0))
+        return min(candidates) + timedelta(seconds=1)
 
 
 @dataclass

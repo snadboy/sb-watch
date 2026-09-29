@@ -51,6 +51,17 @@
               "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls homeassistant.<act> on the entities that just entered. The rule's Paused switch stops both.",
               "warn_ahead": "e.g. 10m. 0 = act at once after notifying."
             }
+          },
+          "effect": {
+            "name": "When the rule is in effect",
+            "description": "Optional. A daily time window (may cross midnight, e.g. 18:00 \u2192 06:00) AND a set of weekdays. Outside them the rule sees nothing: no count, no notification, no action. For a window crossing midnight the day is the one it started on.",
+            "data": {
+              "window_enabled": "Only during a time window",
+              "window_start": "From",
+              "window_end": "Until",
+              "days_enabled": "Only on these days",
+              "days": "Days"
+            }
           }
         }
       }
@@ -115,6 +126,17 @@
             "data_description": {
               "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls homeassistant.<act> on the entities that just entered. The rule's Paused switch stops both.",
               "warn_ahead": "e.g. 10m. 0 = act at once after notifying."
+            }
+          },
+          "effect": {
+            "name": "When the rule is in effect",
+            "description": "Optional. A daily time window (may cross midnight, e.g. 18:00 \u2192 06:00) AND a set of weekdays. Outside them the rule sees nothing: no count, no notification, no action. For a window crossing midnight the day is the one it started on.",
+            "data": {
+              "window_enabled": "Only during a time window",
+              "window_start": "From",
+              "window_end": "Until",
+              "days_enabled": "Only on these days",
+              "days": "Days"
             }
           }
         }

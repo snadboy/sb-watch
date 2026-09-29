@@ -92,6 +92,33 @@ def test_format_message():
     assert fm(["A"], 1, "turn_off", 30) == "1 active: A — turn off in 30 s unless cleared"
 
 
+def test_effect_window_and_days():
+    E = rule.Effect
+    def at(dow, h, m=0):   # 2026-09-28 is a Monday
+        return datetime(2026, 9, 28, h, m, tzinfo=timezone.utc) + timedelta(days=dow)
+    assert E.from_options({}).always
+    e = E.from_options({"window_enabled": True, "window_start": "09:00:00", "window_end": "17:00:00"})
+    assert e.in_effect(at(0, 9)) and e.in_effect(at(0, 16, 59)) and not e.in_effect(at(0, 17)) and not e.in_effect(at(0, 8, 59))
+    n = E.from_options({"window_enabled": True, "window_start": "18:00", "window_end": "06:00"})      # crosses midnight
+    assert n.in_effect(at(0, 18)) and n.in_effect(at(0, 23, 59)) and n.in_effect(at(1, 0)) and n.in_effect(at(1, 5, 59))
+    assert not n.in_effect(at(1, 6)) and not n.in_effect(at(0, 12))
+    # days: Friday night's window belongs to Friday, so Saturday 03:00 is "Friday"
+    fri = E.from_options({"window_enabled": True, "window_start": "18:00", "window_end": "06:00", "days_enabled": True, "days": ["fri"]})
+    assert fri.in_effect(at(4, 20)) and fri.in_effect(at(5, 3)) and not fri.in_effect(at(5, 20)) and not fri.in_effect(at(3, 20))
+    wk = E.from_options({"days_enabled": True, "days": ["sat", "sun"]})
+    assert wk.in_effect(at(5, 12)) and not wk.in_effect(at(0, 12))
+    both = E.from_options({"window_enabled": True, "window_start": "09:00", "window_end": "17:00", "days_enabled": True, "days": ["mon"]})
+    assert both.in_effect(at(0, 10)) and not both.in_effect(at(0, 18)) and not both.in_effect(at(1, 10))
+    # unreadable / empty window = no window; days enabled with none ticked = every day
+    assert E.from_options({"window_enabled": True, "window_start": "x", "window_end": "06:00"}).start is None
+    assert E.from_options({"days_enabled": True, "days": []}).in_effect(at(2, 12))
+    # next change: same-day window at 10:00 → 17:00 today; crossing window at 20:00 → 06:00 tomorrow; days → midnight
+    assert e.next_change(at(0, 10)) == at(0, 17) + timedelta(seconds=1)
+    assert n.next_change(at(0, 20)) == at(1, 6) + timedelta(seconds=1)
+    assert wk.next_change(at(0, 12)) == at(1, 0) + timedelta(seconds=1)
+    assert E.from_options({}).next_change(at(0, 12)) is None
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

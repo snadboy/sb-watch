@@ -155,3 +155,18 @@ rule …".
 `notify_url` option; else `entityId:<first active>` — sent as both
 `clickAction` (Android) and `url` (iOS) in the notify data. Persistent
 notifications unchanged.
+
+## 0.8.0 — when the rule is in effect (2026-09-29)
+
+User: a checkbox for a time window (may cross midnight, 6PM→6AM) and a
+checkbox for weekdays, ANDed. `rule.Effect.from_options` (pure, tested):
+window_enabled/start/end + days_enabled/days; a window crossing midnight
+attributes the early-morning part to the day it STARTED (Friday 18:00 →
+Saturday 06:00 = "fri"); empty/unreadable window = no window; days
+enabled with none ticked = every day. Runner: the gate multiplies the
+match — outside it `apply(())` so Active off / Count 0 / no actions, and
+when it opens the current matches ENTER (dwell then runs). A timer fires
+at the next edge/midnight (`next_change`) so the flip is on time.
+Flow: section "effect" (collapsed unless enabled) with Time selectors
+and a weekday multi-select; `_merge` flattens. Count sensor attributes
+`in_effect`, `window`, `days`.
