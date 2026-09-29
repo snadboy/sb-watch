@@ -23,10 +23,11 @@ CONF_ACTION = "action"             # none | notify | notify_then_act | act
 CONF_NOTIFY_SERVICE = "notify_service"   # "notify.mobile_app_x"; empty = a persistent notification
 CONF_ACT = "act"                   # turn_off | turn_on | toggle | run_script
 CONF_ACT_SCRIPT = "act_script"     # run_script: the script entity to run (variables: entity_id, entity_ids, rule)
+CONF_ACT_ACTIONS = "act_actions"   # run_actions: an HA action list (like a script sequence), run with the same variables
 EVENT_ACTION = "sb_watch_action"
 CONF_WARN_AHEAD = "warn_ahead"     # notify_then_act: act this long after the notification, if still active
 ACTIONS = ("none", "notify", "notify_then_act", "act")
-ACTS = ("turn_off", "turn_on", "toggle", "run_script")
+ACTS = ("turn_off", "turn_on", "toggle", "run_script", "run_actions")
 
 FILTER_FIELDS = (CONF_PATTERNS, CONF_LABELS, CONF_AREAS, CONF_DEVICE_CLASSES, CONF_UNITS, CONF_STATES, CONF_STATE_FOR, CONF_RATE, CONF_RATE_WINDOW)
 DWELL_TICK_SECONDS = 30

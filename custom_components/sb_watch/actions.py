@@ -22,7 +22,7 @@ from custom_components.sb_filter.grammar import parse_duration
 
 import logging
 
-from .const import CONF_ACT, CONF_ACT_SCRIPT, CONF_ACTION, CONF_NOTIFY_SERVICE, CONF_WARN_AHEAD, EVENT_ACTION
+from .const import CONF_ACT, CONF_ACT_ACTIONS, CONF_ACT_SCRIPT, CONF_ACTION, CONF_NOTIFY_SERVICE, CONF_WARN_AHEAD, DOMAIN, EVENT_ACTION
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,6 +38,8 @@ class RuleActions:
         self.notify_service = (options.get(CONF_NOTIFY_SERVICE) or "").strip()
         self.act = options.get(CONF_ACT) or None
         self.act_script = (options.get(CONF_ACT_SCRIPT) or "").strip() or None
+        self.act_actions = list(options.get(CONF_ACT_ACTIONS) or [])   # HA action configs
+        self._script = None
         self.last_action_at = None
         self.actions_taken = 0
         warn = parse_duration(options.get(CONF_WARN_AHEAD))
@@ -119,12 +121,22 @@ class RuleActions:
         for e in entity_ids:
             st = self.hass.states.get(e)
             names.append((st.attributes.get("friendly_name") if st else None) or e)
+        call = None
         if self.act == "run_script":
             if not self.act_script:
                 _LOGGER.warning("SB Watch rule %s: run_script without a script", self.name)
                 return
             what = f"ran {self.act_script}"
             call = ("script", "turn_on", {"entity_id": self.act_script, "variables": {"entity_id": entity_ids[0], "entity_ids": entity_ids, "rule": self.name}})
+        elif self.act == "run_actions":
+            # An HA action list, run like a script step — delays, conditions,
+            # choose, anything — with entity_id / entity_ids / rule as variables.
+            if not self.act_actions:
+                _LOGGER.warning("SB Watch rule %s: run_actions without actions", self.name)
+                return
+            n = len(self.act_actions)
+            what = f"ran {n} action{'s' if n != 1 else ''}"
+            self._run_actions(entity_ids)
         else:
             what = self.act.replace("_", " ")
             call = ("homeassistant", self.act, {"entity_id": entity_ids})
@@ -132,13 +144,29 @@ class RuleActions:
         self.last_action_at = dt_util.utcnow()
         self.actions_taken += 1
         _LOGGER.info("SB Watch rule %s: %s → %s", self.name, what, ", ".join(names))
-        self.hass.async_create_task(self.hass.services.async_call(*call, blocking=False))
+        if call is not None:
+            self.hass.async_create_task(self.hass.services.async_call(*call, blocking=False))
         for e, n in zip(entity_ids, names):
             self.hass.async_create_task(self.hass.services.async_call("logbook", "log", {
                 "name": "SB Watch", "entity_id": e, "domain": "sb_watch",
                 "message": f"{what} by rule “{self.name}”" if self.act != "run_script" else f"rule “{self.name}” {what} for {n}",
             }, blocking=False))
         self.hass.bus.async_fire(EVENT_ACTION, {"rule": self.name, "entry_id": self.entry_id, "act": self.act, "script": self.act_script, "entity_ids": entity_ids, "names": names})
+
+    @callback
+    def _run_actions(self, entity_ids: list[str]) -> None:
+        from homeassistant.core import Context  # noqa: PLC0415
+        from homeassistant.helpers import config_validation as cv  # noqa: PLC0415
+        from homeassistant.helpers.script import Script  # noqa: PLC0415
+
+        if self._script is None:
+            try:
+                self._script = Script(self.hass, cv.SCRIPT_SCHEMA(self.act_actions), f"SB Watch: {self.name}", DOMAIN)
+            except Exception as err:  # noqa: BLE001 - a bad action config is a rule error, not a crash
+                _LOGGER.error("SB Watch rule %s: actions do not validate: %s", self.name, err)
+                return
+        variables = {"entity_id": entity_ids[0], "entity_ids": entity_ids, "rule": self.name}
+        self.hass.async_create_task(self._script.async_run(run_variables=variables, context=Context()))
 
     @callback
     def _notify(self, message: str) -> None:

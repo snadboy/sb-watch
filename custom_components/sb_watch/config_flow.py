@@ -23,7 +23,7 @@ from custom_components.sb_filter.grammar import parse_duration, parse_filter
 from custom_components.sb_filter.ha import match_now, values_now
 
 from .const import (
-    ACTIONS, ACTS, CONF_ACT, CONF_ACT_SCRIPT, CONF_ACTION, CONF_AREAS, CONF_DEVICE_CLASSES, CONF_FILTER_YAML, CONF_FOR,
+    ACTIONS, ACTS, CONF_ACT, CONF_ACT_ACTIONS, CONF_ACT_SCRIPT, CONF_ACTION, CONF_AREAS, CONF_DEVICE_CLASSES, CONF_FILTER_YAML, CONF_FOR,
     CONF_LABELS, CONF_NAME, CONF_NOTIFY_SERVICE, CONF_PATTERNS, CONF_PROBLEM, CONF_RATE, CONF_RATE_WINDOW,
     CONF_STATE_FOR, CONF_STATES, CONF_UNITS, CONF_WARN_AHEAD, DOMAIN,
 )
@@ -31,7 +31,7 @@ from .rule import build_filter, split_list
 
 STEP1_KEYS = (CONF_NAME, CONF_PATTERNS, CONF_LABELS, CONF_AREAS, CONF_DEVICE_CLASSES, CONF_UNITS,
               CONF_STATE_FOR, CONF_RATE, CONF_RATE_WINDOW, CONF_FOR, CONF_PROBLEM, CONF_FILTER_YAML)
-ACTION_KEYS = (CONF_ACTION, CONF_NOTIFY_SERVICE, CONF_ACT, CONF_ACT_SCRIPT, CONF_WARN_AHEAD)
+ACTION_KEYS = (CONF_ACTION, CONF_NOTIFY_SERVICE, CONF_ACT, CONF_ACT_SCRIPT, CONF_ACT_ACTIONS, CONF_WARN_AHEAD)
 
 
 def _step1_schema(d: dict[str, Any]) -> vol.Schema:
@@ -81,8 +81,9 @@ def _step2_schema(hass, step1: dict[str, Any], d: dict[str, Any]) -> vol.Schema:
                 mode=selector.SelectSelectorMode.DROPDOWN)),
             vol.Optional(CONF_NOTIFY_SERVICE, default=actions.get(CONF_NOTIFY_SERVICE) or ""): selector.TextSelector(),
             vol.Optional(CONF_ACT, default=actions.get(CONF_ACT) or "turn_off"): selector.SelectSelector(selector.SelectSelectorConfig(
-                options=[{"value": a, "label": l} for a, l in (("turn_off", "Turn off"), ("turn_on", "Turn on"), ("toggle", "Toggle"), ("run_script", "Run a script"))], mode=selector.SelectSelectorMode.DROPDOWN)),
+                options=[{"value": a, "label": l} for a, l in (("turn_off", "Turn off"), ("turn_on", "Turn on"), ("toggle", "Toggle"), ("run_script", "Run a script"), ("run_actions", "Run these actions"))], mode=selector.SelectSelectorMode.DROPDOWN)),
             vol.Optional(CONF_ACT_SCRIPT, default=actions.get(CONF_ACT_SCRIPT) or vol.UNDEFINED): selector.EntitySelector(selector.EntitySelectorConfig(domain="script")),
+            vol.Optional(CONF_ACT_ACTIONS, default=actions.get(CONF_ACT_ACTIONS) or []): selector.ActionSelector(),
             vol.Optional(CONF_WARN_AHEAD, default=actions.get(CONF_WARN_AHEAD) or "10m"): selector.TextSelector(),
         }), {"collapsed": (actions.get(CONF_ACTION) or "none") == "none"}),
     })
@@ -141,6 +142,8 @@ def _validate_all(hass, options: dict[str, Any]) -> tuple[dict[str, str], dict[s
         errors["base"] = "bad_act"
     if mode in ("notify_then_act", "act") and options.get(CONF_ACT) == "run_script" and not str(options.get(CONF_ACT_SCRIPT) or "").startswith("script."):
         errors["base"] = "bad_script"
+    if mode in ("notify_then_act", "act") and options.get(CONF_ACT) == "run_actions" and not options.get(CONF_ACT_ACTIONS):
+        errors["base"] = "bad_actions"
     if mode == "notify_then_act" and options.get(CONF_WARN_AHEAD) and parse_duration(options[CONF_WARN_AHEAD]) is None:
         errors["base"] = "bad_duration"
     return errors, ph

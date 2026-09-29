@@ -139,3 +139,13 @@ Every act now: `logbook.log` on EACH acted entity (name "SB Watch",
 message "turn off by rule “X”"), a `sb_watch_action` event, INFO log line,
 and Count-sensor attributes `action/act/act_script/last_action{at}/
 actions_taken`. Flow validation `bad_script`.
+
+## 0.7.0 — `run_actions`: an HA action list at the timeout (2026-09-28)
+
+User: "instead of On/Off/Toggle, execute an action like SB Schedule does"
++ other domains (cover…). `act: run_actions` + `act_actions` (HA
+ActionSelector in the flow) → `homeassistant.helpers.script.Script`
+(cv.SCRIPT_SCHEMA), built once per runner, `async_run` with variables
+entity_id/entity_ids/rule and a fresh Context. Validation `bad_actions`.
+The quick acts stay for compatibility. Logbook says "ran N actions by
+rule …".

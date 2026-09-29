@@ -43,7 +43,8 @@
               "notify_service": "Notify service (notify.\u2026; empty = persistent notification)",
               "act": "What to do at the timeout",
               "warn_ahead": "Warn-ahead \u2014 act this long after notifying (notify-then-act only)",
-              "act_script": "Script to run (when \u201cRun a script\u201d) \u2014 gets entity_id, entity_ids and rule as variables"
+              "act_script": "Script to run (when \u201cRun a script\u201d) \u2014 gets entity_id, entity_ids and rule as variables",
+              "act_actions": "Actions to run (when \u201cRun these actions\u201d) \u2014 entity_id, entity_ids and rule are available as variables"
             },
             "data_description": {
               "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls homeassistant.<act> on the entities that just entered. The rule's Paused switch stops both.",
@@ -62,7 +63,8 @@
       "bad_act": "Choose what to do: turn off, turn on or toggle.",
       "unknown_value": "A state no selected entity can be in: {unmatched}",
       "bad_rate": "Unreadable rate \u2014 use >0.5/h, <=-2/h, >=1/m, <0.1/d.",
-      "bad_script": "Pick a script (script.\u2026) for \u201cRun a script\u201d."
+      "bad_script": "Pick a script (script.\u2026) for \u201cRun a script\u201d.",
+      "bad_actions": "Add at least one action for \u201cRun these actions\u201d."
     },
     "abort": {}
   },
@@ -105,7 +107,8 @@
               "notify_service": "Notify service (notify.\u2026; empty = persistent notification)",
               "act": "What to do at the timeout",
               "warn_ahead": "Warn-ahead \u2014 act this long after notifying (notify-then-act only)",
-              "act_script": "Script to run (when \u201cRun a script\u201d) \u2014 gets entity_id, entity_ids and rule as variables"
+              "act_script": "Script to run (when \u201cRun a script\u201d) \u2014 gets entity_id, entity_ids and rule as variables",
+              "act_actions": "Actions to run (when \u201cRun these actions\u201d) \u2014 entity_id, entity_ids and rule are available as variables"
             },
             "data_description": {
               "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls homeassistant.<act> on the entities that just entered. The rule's Paused switch stops both.",
@@ -124,7 +127,8 @@
       "bad_act": "Choose what to do: turn off, turn on or toggle.",
       "unknown_value": "A state no selected entity can be in: {unmatched}",
       "bad_rate": "Unreadable rate \u2014 use >0.5/h, <=-2/h, >=1/m, <0.1/d.",
-      "bad_script": "Pick a script (script.\u2026) for \u201cRun a script\u201d."
+      "bad_script": "Pick a script (script.\u2026) for \u201cRun a script\u201d.",
+      "bad_actions": "Add at least one action for \u201cRun these actions\u201d."
     }
   },
   "services": {
