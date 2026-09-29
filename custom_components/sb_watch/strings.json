@@ -44,7 +44,8 @@
               "act": "What to do at the timeout",
               "warn_ahead": "Warn-ahead \u2014 act this long after notifying (notify-then-act only)",
               "act_script": "Script to run (when \u201cRun a script\u201d) \u2014 gets entity_id, entity_ids and rule as variables",
-              "act_actions": "Actions to run (when \u201cRun these actions\u201d) \u2014 entity_id, entity_ids and rule are available as variables"
+              "act_actions": "Actions to run (when \u201cRun these actions\u201d) \u2014 entity_id, entity_ids and rule are available as variables",
+              "notify_url": "Where a tap on the notification goes (a dashboard path like /dashboard-monitor/0, or entityId:light.x; empty = the first active entity)"
             },
             "data_description": {
               "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls homeassistant.<act> on the entities that just entered. The rule's Paused switch stops both.",
@@ -108,7 +109,8 @@
               "act": "What to do at the timeout",
               "warn_ahead": "Warn-ahead \u2014 act this long after notifying (notify-then-act only)",
               "act_script": "Script to run (when \u201cRun a script\u201d) \u2014 gets entity_id, entity_ids and rule as variables",
-              "act_actions": "Actions to run (when \u201cRun these actions\u201d) \u2014 entity_id, entity_ids and rule are available as variables"
+              "act_actions": "Actions to run (when \u201cRun these actions\u201d) \u2014 entity_id, entity_ids and rule are available as variables",
+              "notify_url": "Where a tap on the notification goes (a dashboard path like /dashboard-monitor/0, or entityId:light.x; empty = the first active entity)"
             },
             "data_description": {
               "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls homeassistant.<act> on the entities that just entered. The rule's Paused switch stops both.",

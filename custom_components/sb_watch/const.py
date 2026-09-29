@@ -21,6 +21,7 @@ CONF_PROBLEM = "problem"          # binary sensor device_class problem (on = som
 # actions (entry.options)
 CONF_ACTION = "action"             # none | notify | notify_then_act | act
 CONF_NOTIFY_SERVICE = "notify_service"   # "notify.mobile_app_x"; empty = a persistent notification
+CONF_NOTIFY_URL = "notify_url"           # where a tap on the push goes: a dashboard path, or entityId:<id>; empty = the first active entity's more-info
 CONF_ACT = "act"                   # turn_off | turn_on | toggle | run_script
 CONF_ACT_SCRIPT = "act_script"     # run_script: the script entity to run (variables: entity_id, entity_ids, rule)
 CONF_ACT_ACTIONS = "act_actions"   # run_actions: an HA action list (like a script sequence), run with the same variables

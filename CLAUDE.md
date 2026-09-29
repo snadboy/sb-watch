@@ -149,3 +149,9 @@ ActionSelector in the flow) → `homeassistant.helpers.script.Script`
 entity_id/entity_ids/rule and a fresh Context. Validation `bad_actions`.
 The quick acts stay for compatibility. Logbook says "ran N actions by
 rule …".
+
+## 0.7.1 — the push has a tap target (2026-09-28)
+
+`notify_url` option; else `entityId:<first active>` — sent as both
+`clickAction` (Android) and `url` (iOS) in the notify data. Persistent
+notifications unchanged.

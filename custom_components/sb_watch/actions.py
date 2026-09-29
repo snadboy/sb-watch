@@ -22,7 +22,7 @@ from custom_components.sb_filter.grammar import parse_duration
 
 import logging
 
-from .const import CONF_ACT, CONF_ACT_ACTIONS, CONF_ACT_SCRIPT, CONF_ACTION, CONF_NOTIFY_SERVICE, CONF_WARN_AHEAD, DOMAIN, EVENT_ACTION
+from .const import CONF_ACT, CONF_ACT_ACTIONS, CONF_ACT_SCRIPT, CONF_ACTION, CONF_NOTIFY_SERVICE, CONF_NOTIFY_URL, CONF_WARN_AHEAD, DOMAIN, EVENT_ACTION
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -36,6 +36,7 @@ class RuleActions:
         self.name = name
         self.mode = options.get(CONF_ACTION) or "none"
         self.notify_service = (options.get(CONF_NOTIFY_SERVICE) or "").strip()
+        self.notify_url = (options.get(CONF_NOTIFY_URL) or "").strip()
         self.act = options.get(CONF_ACT) or None
         self.act_script = (options.get(CONF_ACT_SCRIPT) or "").strip() or None
         self.act_actions = list(options.get(CONF_ACT_ACTIONS) or [])   # HA action configs
@@ -66,7 +67,7 @@ class RuleActions:
         # notify / notify_then_act: the notification mirrors the active set
         if active:
             pending_act = self.act if self.mode == "notify_then_act" else None
-            self._notify(format_message(names, len(active), pending_act, self.warn_seconds if pending_act else None))
+            self._notify(format_message(names, len(active), pending_act, self.warn_seconds if pending_act else None), list(active))
         else:
             self._clear()
         if self.mode == "notify_then_act" and self.act:
@@ -169,10 +170,15 @@ class RuleActions:
         self.hass.async_create_task(self._script.async_run(run_variables=variables, context=Context()))
 
     @callback
-    def _notify(self, message: str) -> None:
+    def _notify(self, message: str, active: list[str] | None = None) -> None:
         if self.notify_service.startswith("notify."):
             domain, service = self.notify_service.split(".", 1)
-            data = {"title": self.name, "message": message, "data": {"tag": self.tag, "notification_id": self.tag}}
+            # A tap opens something relevant: the configured URL, else the first
+            # active entity's more-info (the companion apps understand entityId:…;
+            # Android reads clickAction, iOS reads url).
+            target = self.notify_url or (f"entityId:{active[0]}" if active else "")
+            extra = {"clickAction": target, "url": target} if target else {}
+            data = {"title": self.name, "message": message, "data": {"tag": self.tag, "notification_id": self.tag, **extra}}
         else:
             domain, service = "persistent_notification", "create"
             data = {"title": self.name, "message": message, "notification_id": self.tag}

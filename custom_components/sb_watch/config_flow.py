@@ -24,14 +24,14 @@ from custom_components.sb_filter.ha import match_now, values_now
 
 from .const import (
     ACTIONS, ACTS, CONF_ACT, CONF_ACT_ACTIONS, CONF_ACT_SCRIPT, CONF_ACTION, CONF_AREAS, CONF_DEVICE_CLASSES, CONF_FILTER_YAML, CONF_FOR,
-    CONF_LABELS, CONF_NAME, CONF_NOTIFY_SERVICE, CONF_PATTERNS, CONF_PROBLEM, CONF_RATE, CONF_RATE_WINDOW,
+    CONF_LABELS, CONF_NAME, CONF_NOTIFY_SERVICE, CONF_NOTIFY_URL, CONF_PATTERNS, CONF_PROBLEM, CONF_RATE, CONF_RATE_WINDOW,
     CONF_STATE_FOR, CONF_STATES, CONF_UNITS, CONF_WARN_AHEAD, DOMAIN,
 )
 from .rule import build_filter, split_list
 
 STEP1_KEYS = (CONF_NAME, CONF_PATTERNS, CONF_LABELS, CONF_AREAS, CONF_DEVICE_CLASSES, CONF_UNITS,
               CONF_STATE_FOR, CONF_RATE, CONF_RATE_WINDOW, CONF_FOR, CONF_PROBLEM, CONF_FILTER_YAML)
-ACTION_KEYS = (CONF_ACTION, CONF_NOTIFY_SERVICE, CONF_ACT, CONF_ACT_SCRIPT, CONF_ACT_ACTIONS, CONF_WARN_AHEAD)
+ACTION_KEYS = (CONF_ACTION, CONF_NOTIFY_SERVICE, CONF_NOTIFY_URL, CONF_ACT, CONF_ACT_SCRIPT, CONF_ACT_ACTIONS, CONF_WARN_AHEAD)
 
 
 def _step1_schema(d: dict[str, Any]) -> vol.Schema:
@@ -80,6 +80,7 @@ def _step2_schema(hass, step1: dict[str, Any], d: dict[str, Any]) -> vol.Schema:
                          ("notify_then_act", "Notify, then act after the warn-ahead"), ("act", "Act at once"))],
                 mode=selector.SelectSelectorMode.DROPDOWN)),
             vol.Optional(CONF_NOTIFY_SERVICE, default=actions.get(CONF_NOTIFY_SERVICE) or ""): selector.TextSelector(),
+            vol.Optional(CONF_NOTIFY_URL, default=actions.get(CONF_NOTIFY_URL) or ""): selector.TextSelector(),
             vol.Optional(CONF_ACT, default=actions.get(CONF_ACT) or "turn_off"): selector.SelectSelector(selector.SelectSelectorConfig(
                 options=[{"value": a, "label": l} for a, l in (("turn_off", "Turn off"), ("turn_on", "Turn on"), ("toggle", "Toggle"), ("run_script", "Run a script"), ("run_actions", "Run these actions"))], mode=selector.SelectSelectorMode.DROPDOWN)),
             vol.Optional(CONF_ACT_SCRIPT, default=actions.get(CONF_ACT_SCRIPT) or vol.UNDEFINED): selector.EntitySelector(selector.EntitySelectorConfig(domain="script")),
