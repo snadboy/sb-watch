@@ -37,7 +37,7 @@ from .const import (
 )
 from .rule import (
     _yaml_filter, build_clauses, clean_triggers, duration_seconds, model_from_filter, selection_filter, split_list,
-    trigger_errors, upgrade_options,
+    trigger_errors, triggers_text, upgrade_options,
 )
 
 SELECTION_KEYS = (CONF_PATTERNS, CONF_LABELS, CONF_AREAS, CONF_CLASSES)
@@ -150,6 +150,16 @@ def _absorb_yaml(step1: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, 
     return {**step1, **model, CONF_FILTER_YAML: "", CONF_FOR: ""}, triggers, {}
 
 
+def _triggers_note(d: dict[str, Any]) -> str:
+    """Step 1 only narrows; say what the rule's comparison IS, so "<20" is not looked for here."""
+    if str(d.get(CONF_FILTER_YAML) or "").strip():
+        return "This rule's conditions are in the YAML under Advanced."
+    rows = clean_triggers(d.get(CONF_TRIGGERS))
+    if rows:
+        return f"**Triggers now:** {triggers_text(rows)}. They are edited on the next step."
+    return "The conditions that trigger the rule — a state, a range such as <20, a rate — are on the next step."
+
+
 def _merge(step1: dict[str, Any], step2: dict[str, Any]) -> dict[str, Any]:
     actions = step2.get("actions") or {}
     eff = step2.get("effect") or {}
@@ -231,7 +241,8 @@ class _TwoStep:
                 if absorbed is not None:
                     self._defaults = {**self._defaults, CONF_TRIGGERS: absorbed}
                 return await self.async_step_values()
-        return self.async_show_form(step_id=step_id, data_schema=_step1_schema(user_input or self._defaults), errors=errors)
+        return self.async_show_form(step_id=step_id, data_schema=_step1_schema(user_input or self._defaults), errors=errors,
+                                    description_placeholders={"triggers": _triggers_note(self._defaults)})
 
     async def _do_step2(self, user_input: dict[str, Any] | None):
         errors: dict[str, str] = {}

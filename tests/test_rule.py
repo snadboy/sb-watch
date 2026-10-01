@@ -246,3 +246,9 @@ def test_engine_restore_new_and_v1_snapshots():
     up = rule.RuleEngine(cs); up.restore(v1, parse)
     assert up.apply({cs[0].key: ["a", "c"], cs[1].key: []}, t(700)) == ((), ()), "a stays active, c is still 200 s short"
     assert up.apply({cs[0].key: ["a", "c"], cs[1].key: []}, t(900)) == (("c",), ())
+
+
+def test_triggers_text():
+    rows = rule.clean_triggers([{"kind": "state", "value": "unavailable", "for": "2m"}, {"kind": "range", "value": "<20", "for": "2m"},
+                                {"kind": "rate", "value": ">0.5", "per": "h", "for": "5m"}, {"kind": "state", "value": "", "for": "6h"}, {"kind": "state", "value": "off", "for": ""}])
+    assert rule.triggers_text(rows) == "unavailable for 2m · <20 for 2m · >0.5/h over 5m · any state for 6h · off"

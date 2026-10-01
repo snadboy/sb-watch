@@ -200,3 +200,12 @@ meant — two concepts for one idea). Built:
   absorbed rows — that is how the Entity Browser's save-as-rule lands as rows.
 - GOTCHA: a translation containing `<act>` renders "Translation error:
   UNCLOSED_TAG" in the form — no angle-bracket words in strings.json.
+
+## 0.9.1 — step 1 says what the triggers are (2026-10-01)
+
+User, looking at step 1 of "Batteries low": "a low seems to be missing" —
+the `<20` row lives on step 2 and step 1 only hinted "Next: …". Same gap as
+before the redesign. Step 1's description now carries `{triggers}`
+(`_triggers_note`): "**Triggers now:** unavailable for 2m · <20 for 2m. They
+are edited on the next step." (or where the conditions live, for a new rule
+/ a YAML rule). Titles are numbered "1 of 2" / "2 of 2".

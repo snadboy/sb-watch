@@ -159,6 +159,17 @@ def clean_triggers(raw: Any) -> list[dict[str, str]]:
     return out
 
 
+def triggers_text(triggers: list[dict[str, str]]) -> str:
+    """The trigger rows in words: 'unavailable for 2m · <20 for 2m · >0.5/h over 5m'."""
+    parts = []
+    for t in triggers:
+        if t["kind"] == "rate":
+            parts.append(f"{t['value']}/{t.get('per') or 'h'}" + (f" over {t['for']}" if t["for"] else ""))
+        else:
+            parts.append((t["value"] or "any state") + (f" for {t['for']}" if t["for"] else ""))
+    return " · ".join(parts)
+
+
 def trigger_errors(triggers: list[dict[str, str]]) -> list[str]:
     """Human-readable problems with trigger rows (empty = fine)."""
     errs: list[str] = []

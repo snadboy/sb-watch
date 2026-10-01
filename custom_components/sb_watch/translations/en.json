@@ -2,8 +2,8 @@
   "config": {
     "step": {
       "user": {
-        "title": "SB Watch rule — which entities",
-        "description": "Every filled row must match; within a row, any entry matches. Next: what makes them trigger.",
+        "title": "SB Watch rule — 1 of 2: which entities",
+        "description": "Every filled row must match; within a row, any entry matches.\n\n{triggers}",
         "data": {
           "name": "Rule name",
           "patterns": "Patterns",
@@ -31,7 +31,7 @@
         }
       },
       "values": {
-        "title": "SB Watch rule — when do they trigger",
+        "title": "SB Watch rule — 2 of 2: when do they trigger",
         "description": "Any one row triggers the rule for an entity. {selected}{vocab}\n\n{unmatched}",
         "data": {
           "triggers": "Triggers"
@@ -89,8 +89,8 @@
   "options": {
     "step": {
       "init": {
-        "title": "SB Watch rule — which entities",
-        "description": "Every filled row must match; within a row, any entry matches. Next: what makes them trigger.",
+        "title": "SB Watch rule — 1 of 2: which entities",
+        "description": "Every filled row must match; within a row, any entry matches.\n\n{triggers}",
         "data": {
           "name": "Rule name",
           "patterns": "Patterns",
@@ -118,7 +118,7 @@
         }
       },
       "values": {
-        "title": "SB Watch rule — when do they trigger",
+        "title": "SB Watch rule — 2 of 2: when do they trigger",
         "description": "Any one row triggers the rule for an entity. {selected}{vocab}\n\n{unmatched}",
         "data": {
           "triggers": "Triggers"
