@@ -14,7 +14,9 @@ CONF_STATES = "states"
 CONF_STATE_FOR = "state_for"
 CONF_RATE = "rate"
 CONF_RATE_WINDOW = "rate_window"
-CONF_FOR = "for"                 # rule-level dwell: matched continuously this long before it counts
+CONF_CLASSES = "classes"          # ["battery:%", "temperature", ":°F"] — device class AND unit pairs (SB Filter grammar 4)
+CONF_TRIGGERS = "triggers"        # [{kind: state|range|rate, value, for, per}] — each with its own duration, ORed
+CONF_FOR = "for"                 # the advanced YAML path only: matched continuously this long before it counts
 CONF_FILTER_YAML = "filter_yaml"  # advanced: a YAML mapping in the FILTER.md grammar; overrides the fields
 CONF_PROBLEM = "problem"          # binary sensor device_class problem (on = something needs attention)
 
@@ -38,6 +40,7 @@ CONF_WARN_AHEAD = "warn_ahead"     # notify_then_act: act this long after the no
 ACTIONS = ("none", "notify", "notify_then_act", "act")
 ACTS = ("turn_off", "turn_on", "toggle", "run_script", "run_actions")
 
-FILTER_FIELDS = (CONF_PATTERNS, CONF_LABELS, CONF_AREAS, CONF_DEVICE_CLASSES, CONF_UNITS, CONF_STATES, CONF_STATE_FOR, CONF_RATE, CONF_RATE_WINDOW)
+OPTIONS_VERSION = 2          # 1 = one filter + one dwell; 2 = selection + triggers (rule.upgrade_options)
+MIN_FILTER_GRAMMAR = 4      # `classes` pairs
 DWELL_TICK_SECONDS = 30
 STARTUP_SETTLE_SECONDS = 60   # after EVENT_HOMEASSISTANT_STARTED, before the first evaluation on a cold start

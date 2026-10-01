@@ -1,38 +1,70 @@
 # SB Watch
 
 Rules that watch what an [SB Filter](https://github.com/snadboy/sb-filter) matches.
-A rule is **a filter + a dwell**; each rule is a config entry with its own device page:
+A rule is **a selection + triggers**; each rule is a config entry with its own device page:
 
 | Entity | Meaning |
 |---|---|
 | `binary_sensor.<rule>_active` | on while anything is active (device class *problem* by default) |
-| `sensor.<rule>_count` | how many are active; attributes `entity_ids`, `names`, `pending` (matched but still dwelling), `filter`, `for` |
+| `sensor.<rule>_count` | how many are active; attributes `entity_ids`, `names`, `pending`, `matched_since` (the clocks), `selection`, `triggers`, `filter`, `advanced` |
 | event `sb_watch_changed` | `{rule, entry_id, entered, left, active, count}` on every change (never on the first evaluation) |
 
-Requires the SB Filter integration (declared as a dependency; install it first).
+Requires the SB Filter integration ≥ 0.5.0 (grammar 4: `classes` pairs; declared as a dependency, install it first).
 
 ## A rule
 
-*Settings → Devices & services → Add integration → SB Watch.* Two steps:
+**Which entities** — the selection. Every filled row must match; within a row, any entry matches.
 
-1. **What to watch** — pickers for labels and areas, text for patterns, device
-   classes, units, time-in-state, **rate of change** (`>0.5/h`) and the rule's dwell, and an **advanced YAML
-   field** that takes an SB Entity Browser card's filter keys verbatim and
-   overrides the fields:
-2. **States and actions** — the states as a multi-select built live from the
-   vocabulary of what step 1 selects (translated label, live count, raw value
-   stored); type a range or number as a custom entry. A word no selected entity
-   can be in is rejected with a did-you-mean. Actions sit in a collapsed section.
+| Row | Example | Meaning |
+|---|---|---|
+| Patterns | `fp300`, `light.`, `cover.garage_door` | words in one pattern AND; `*` `?` wildcards; an entity id works |
+| Areas / Labels | Kitchen, Office | the entity's own, else its device's |
+| Classes | `battery:%`, `temperature`, `:°F` | device class **and** unit as a pair; either side optional |
+
+**When do they trigger** — one list of rows; **any one** row triggers the rule for an entity. Each row has its own duration.
+
+| Type | Value | Duration means |
+|---|---|---|
+| State | a word: `off`, `open`, `unavailable` (empty = any state) | held that state for this long |
+| Range | a number: `<20`, `>=80`, `15-50`, `=3` | stayed inside the range for this long |
+| Rate | change per time: `>0.5` per hour | the window the rate is measured over |
+
+No rows = every selected entity counts. A number typed into a State row is treated as a Range.
+
+**How durations are timed.** Each row keeps a clock per entity. It starts when the
+entity first matches, **seeded from the entity's `last_changed`** — a bulb that
+has already been on for two hours counts at once when you create a rule — and it
+is **persisted**, so a Home Assistant restart does not start anyone over
+(`last_changed` itself is reset by a restart). The "any state" row is the
+exception: with no value to match on, only time-since-last-change can say
+"unchanged for 6 h", and that does reset at a restart.
+
+Where to edit:
+
+- *Settings → Devices & services → SB Watch → the rule's gear.* Two steps: **which
+  entities** (chips with an add control under each), then **when do they trigger**
+  (a list of rows; each opens a small form), followed by the in-effect window and
+  the actions. The step lists the states the selection is in right now.
+- The **SB Watch Card** with `rules: all` — the same model in one dialog, rows
+  inline, with live "N selected / N match now" counts.
+
+**Advanced — filter as YAML.** Paste an SB Entity Browser card's filter. What the
+form can express is *absorbed*: the selection fills the chips, the conditions
+become trigger rows, and the YAML box empties. What it cannot say stays as YAML
+and then defines the whole filter, with its own "matched continuously for" dwell:
+a `state_for: "<5m"` (changed *recently*), a `rate` ANDed with `states`.
 
 ```yaml
-device_classes: [battery]
-units: ["%"]
-states: [unavailable, "<20"]
+# entry options (version 2)
+patterns: []
+classes: ["battery:%"]
+triggers:
+  - {kind: state, value: unavailable, for: 2m}
+  - {kind: range, value: "<20", for: 2m}
 ```
 
-`for` is the rule's own dwell (its clocks survive an HA restart): an entity counts only after it has matched
-continuously that long (`10m`, `2h`) — hysteresis for values that flap around a
-threshold. It is separate from the filter's `state_for` (time in the current state).
+Version 1 entries (one filter + one dwell) are migrated on first load; nothing
+changes what it matches, and running clocks carry over.
 
 ## Actions — staged
 

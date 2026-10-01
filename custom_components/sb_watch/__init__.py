@@ -1,6 +1,6 @@
 """SB Watch — rules that watch what an SB filter matches.
 
-A rule = an SB Filter config + a dwell (`for`). Each rule is a config entry
+A rule = a selection (which entities) + triggers (state / range / rate, each with its own duration). Each rule is a config entry
 with a device page: a binary sensor (anything active), a count sensor with
 the active entity ids, and the `sb_watch_changed` event on every change.
 Actions come later and hang off that event.
@@ -15,7 +15,12 @@ from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from .const import DOMAIN, STARTUP_SETTLE_SECONDS
+from homeassistant.exceptions import ConfigEntryNotReady
+
+from custom_components.sb_filter.const import GRAMMAR_VERSION as FILTER_GRAMMAR
+
+from .const import DOMAIN, MIN_FILTER_GRAMMAR, OPTIONS_VERSION, STARTUP_SETTLE_SECONDS
+from .rule import upgrade_options
 from .runner import RuleRunner
 
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH]
@@ -35,7 +40,19 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """v1 (one filter + one dwell) → v2 (selection + triggers). What the model cannot
+    express stays as the advanced YAML, so no rule changes what it matches."""
+    if entry.version > OPTIONS_VERSION:
+        return False
+    if entry.version < OPTIONS_VERSION:
+        hass.config_entries.async_update_entry(entry, options=upgrade_options(dict(entry.options)), version=OPTIONS_VERSION)
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    if FILTER_GRAMMAR < MIN_FILTER_GRAMMAR:
+        raise ConfigEntryNotReady(f"SB Filter grammar {MIN_FILTER_GRAMMAR}+ needed (class:unit pairs); installed grammar is {FILTER_GRAMMAR} — update SB Filter")
     runner = RuleRunner(hass, entry)
     hass.data.setdefault(DOMAIN, {}).setdefault("runners", {})[entry.entry_id] = runner
     entry.runtime_data = runner

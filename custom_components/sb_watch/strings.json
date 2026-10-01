@@ -2,37 +2,42 @@
   "config": {
     "step": {
       "user": {
-        "title": "SB Watch rule \u2014 what to watch",
-        "description": "A rule watches what an SB filter matches. Across fields: AND. Within a field: OR. Nothing configured matches nothing.",
+        "title": "SB Watch rule — which entities",
+        "description": "Every filled row must match; within a row, any entry matches. Next: what makes them trigger.",
         "data": {
           "name": "Rule name",
-          "patterns": "Entity patterns (comma-separated)",
-          "labels": "Labels",
+          "patterns": "Patterns",
           "areas": "Areas",
-          "device_classes": "Device classes (comma-separated)",
-          "units": "Units (comma-separated)",
-          "state_for": "In current state for (e.g. 2h, <5m)",
-          "for": "Rule dwell \u2014 matched continuously for (e.g. 10m)",
-          "problem": "Report as a problem (binary sensor device class)",
-          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)",
-          "rate": "Rate of change (e.g. >0.5/h, <-2/h)",
-          "rate_window": "Rate window (default = the rate's unit)"
+          "labels": "Labels",
+          "classes": "Classes (device class, or class:unit)"
         },
         "data_description": {
-          "patterns": "Words in one pattern AND; patterns OR. * and ? wildcards.",
-          "state_for": "Time in the current state, from last_changed; bare number = minutes.",
-          "for": "An entity counts only after matching this long \u2014 hysteresis for flapping values.",
-          "filter_yaml": "Paste an SB Entity Browser card's filter keys: patterns, labels, areas, device_classes, units, states, state_min, state_max, state_for.",
-          "rate": "Change per minute/hour/day of a numeric state; comparator required; entries ORed. A sensor needs history at least as old as the window."
+          "patterns": "Type a pattern and press Enter. Words in one pattern AND; * and ? wildcards; an entity id works too.",
+          "classes": "battery:% = battery sensors in percent; temperature = any unit; :°F = any class in °F."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "description": "Rarely needed.",
+            "data": {
+              "problem": "Report as a problem (binary sensor device class)",
+              "filter_yaml": "Filter as YAML — paste an SB Entity Browser card's filter",
+              "for": "YAML only: matched continuously for (e.g. 10m)"
+            },
+            "data_description": {
+              "filter_yaml": "What this form can express is moved into the fields and trigger rows; the rest stays here and then defines the whole filter."
+            }
+          }
         }
       },
       "values": {
-        "title": "States and actions",
-        "description": "Tick the states to match \u2014 the number is how many selected entities are in each now. Type a range or number (<20, >=80, 40-60, 100) as a custom entry.\n\n{unmatched}",
+        "title": "SB Watch rule — when do they trigger",
+        "description": "Any one row triggers the rule for an entity. {selected}{vocab}\n\n{unmatched}",
         "data": {
-          "states": "States",
-          "state_min": "Numeric state \u2265 (shorthand range)",
-          "state_max": "Numeric state \u2264"
+          "triggers": "Triggers"
+        },
+        "data_description": {
+          "triggers": "State: a word state held for the duration (timed from the entity's last change). Range: a numeric state inside the range for the duration. Rate: change per minute/hour/day measured over the duration. No rows = every selected entity counts."
         },
         "sections": {
           "actions": {
@@ -40,21 +45,21 @@
             "description": "Optional: what the rule does when something becomes active.",
             "data": {
               "action": "Action",
-              "notify_service": "Notify service (notify.\u2026; empty = persistent notification)",
+              "notify_service": "Notify service (notify.…; empty = persistent notification)",
               "act": "What to do at the timeout",
-              "warn_ahead": "Warn-ahead \u2014 act this long after notifying (notify-then-act only)",
-              "act_script": "Script to run (when \u201cRun a script\u201d) \u2014 gets entity_id, entity_ids and rule as variables",
-              "act_actions": "Actions to run (when \u201cRun these actions\u201d) \u2014 entity_id, entity_ids and rule are available as variables",
+              "warn_ahead": "Warn-ahead — act this long after notifying (notify-then-act only)",
+              "act_script": "Script to run (when “Run a script”) — gets entity_id, entity_ids and rule as variables",
+              "act_actions": "Actions to run (when “Run these actions”) — entity_id, entity_ids and rule are available as variables",
               "notify_url": "Where a tap on the notification goes (a dashboard path like /dashboard-monitor/0, or entityId:light.x; empty = the first active entity)"
             },
             "data_description": {
-              "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls homeassistant.<act> on the entities that just entered. The rule's Paused switch stops both.",
+              "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls the chosen service (turn off, turn on, toggle, a script, or your actions) on the entities that just entered. The rule's Paused switch stops both.",
               "warn_ahead": "e.g. 10m. 0 = act at once after notifying."
             }
           },
           "effect": {
             "name": "When the rule is in effect",
-            "description": "Optional. A daily time window (may cross midnight, e.g. 18:00 \u2192 06:00) AND a set of weekdays. Outside them the rule sees nothing: no count, no notification, no action. For a window crossing midnight the day is the one it started on.",
+            "description": "Optional. A daily time window (may cross midnight, e.g. 18:00 → 06:00) AND a set of weekdays. Outside them the rule sees nothing: no count, no notification, no action. For a window crossing midnight the day is the one it started on.",
             "data": {
               "window_enabled": "Only during a time window",
               "window_start": "From",
@@ -67,48 +72,59 @@
       }
     },
     "error": {
-      "empty_filter": "The filter matches nothing \u2014 configure at least one field.",
+      "empty_filter": "The rule selects nothing — fill at least one row or add a trigger.",
       "bad_yaml": "The YAML is not a mapping (or does not parse).",
-      "bad_duration": "Unreadable duration \u2014 use 2h, 1h30m, 90s, <5m or a number of minutes.",
+      "bad_duration": "Unreadable duration — use 2h, 1h30m, 90s or a number of minutes.",
       "bad_action": "Unknown action.",
       "bad_notify": "A notify service looks like notify.mobile_app_phone.",
       "bad_act": "Choose what to do: turn off, turn on or toggle.",
       "unknown_value": "A state no selected entity can be in: {unmatched}",
-      "bad_rate": "Unreadable rate \u2014 use >0.5/h, <=-2/h, >=1/m, <0.1/d.",
-      "bad_script": "Pick a script (script.\u2026) for \u201cRun a script\u201d.",
-      "bad_actions": "Add at least one action for \u201cRun these actions\u201d."
+      "bad_script": "Pick a script (script.…) for “Run a script”.",
+      "bad_actions": "Add at least one action for “Run these actions”.",
+      "bad_trigger": "A trigger row is unreadable: {unmatched}",
+      "no_name": "Give the rule a name."
     },
     "abort": {}
   },
   "options": {
     "step": {
       "init": {
-        "title": "SB Watch rule \u2014 what to watch",
+        "title": "SB Watch rule — which entities",
+        "description": "Every filled row must match; within a row, any entry matches. Next: what makes them trigger.",
         "data": {
           "name": "Rule name",
-          "patterns": "Entity patterns (comma-separated)",
-          "labels": "Labels",
+          "patterns": "Patterns",
           "areas": "Areas",
-          "device_classes": "Device classes (comma-separated)",
-          "units": "Units (comma-separated)",
-          "state_for": "In current state for (e.g. 2h, <5m)",
-          "for": "Rule dwell \u2014 matched continuously for (e.g. 10m)",
-          "problem": "Report as a problem (binary sensor device class)",
-          "filter_yaml": "Advanced: filter as YAML (overrides the fields above)",
-          "rate": "Rate of change (e.g. >0.5/h, <-2/h)",
-          "rate_window": "Rate window (default = the rate's unit)"
+          "labels": "Labels",
+          "classes": "Classes (device class, or class:unit)"
         },
         "data_description": {
-          "rate": "Change per minute/hour/day of a numeric state; comparator required; entries ORed. A sensor needs history at least as old as the window."
+          "patterns": "Type a pattern and press Enter. Words in one pattern AND; * and ? wildcards; an entity id works too.",
+          "classes": "battery:% = battery sensors in percent; temperature = any unit; :°F = any class in °F."
+        },
+        "sections": {
+          "advanced": {
+            "name": "Advanced",
+            "description": "Rarely needed.",
+            "data": {
+              "problem": "Report as a problem (binary sensor device class)",
+              "filter_yaml": "Filter as YAML — paste an SB Entity Browser card's filter",
+              "for": "YAML only: matched continuously for (e.g. 10m)"
+            },
+            "data_description": {
+              "filter_yaml": "What this form can express is moved into the fields and trigger rows; the rest stays here and then defines the whole filter."
+            }
+          }
         }
       },
       "values": {
-        "title": "States and actions",
-        "description": "Tick the states to match \u2014 the number is how many selected entities are in each now. Type a range or number (<20, >=80, 40-60, 100) as a custom entry.\n\n{unmatched}",
+        "title": "SB Watch rule — when do they trigger",
+        "description": "Any one row triggers the rule for an entity. {selected}{vocab}\n\n{unmatched}",
         "data": {
-          "states": "States",
-          "state_min": "Numeric state \u2265 (shorthand range)",
-          "state_max": "Numeric state \u2264"
+          "triggers": "Triggers"
+        },
+        "data_description": {
+          "triggers": "State: a word state held for the duration (timed from the entity's last change). Range: a numeric state inside the range for the duration. Rate: change per minute/hour/day measured over the duration. No rows = every selected entity counts."
         },
         "sections": {
           "actions": {
@@ -116,21 +132,21 @@
             "description": "Optional: what the rule does when something becomes active.",
             "data": {
               "action": "Action",
-              "notify_service": "Notify service (notify.\u2026; empty = persistent notification)",
+              "notify_service": "Notify service (notify.…; empty = persistent notification)",
               "act": "What to do at the timeout",
-              "warn_ahead": "Warn-ahead \u2014 act this long after notifying (notify-then-act only)",
-              "act_script": "Script to run (when \u201cRun a script\u201d) \u2014 gets entity_id, entity_ids and rule as variables",
-              "act_actions": "Actions to run (when \u201cRun these actions\u201d) \u2014 entity_id, entity_ids and rule are available as variables",
+              "warn_ahead": "Warn-ahead — act this long after notifying (notify-then-act only)",
+              "act_script": "Script to run (when “Run a script”) — gets entity_id, entity_ids and rule as variables",
+              "act_actions": "Actions to run (when “Run these actions”) — entity_id, entity_ids and rule are available as variables",
               "notify_url": "Where a tap on the notification goes (a dashboard path like /dashboard-monitor/0, or entityId:light.x; empty = the first active entity)"
             },
             "data_description": {
-              "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls homeassistant.<act> on the entities that just entered. The rule's Paused switch stops both.",
+              "action": "Notify replaces one notification per rule in place and clears it when nothing is active. Act calls the chosen service (turn off, turn on, toggle, a script, or your actions) on the entities that just entered. The rule's Paused switch stops both.",
               "warn_ahead": "e.g. 10m. 0 = act at once after notifying."
             }
           },
           "effect": {
             "name": "When the rule is in effect",
-            "description": "Optional. A daily time window (may cross midnight, e.g. 18:00 \u2192 06:00) AND a set of weekdays. Outside them the rule sees nothing: no count, no notification, no action. For a window crossing midnight the day is the one it started on.",
+            "description": "Optional. A daily time window (may cross midnight, e.g. 18:00 → 06:00) AND a set of weekdays. Outside them the rule sees nothing: no count, no notification, no action. For a window crossing midnight the day is the one it started on.",
             "data": {
               "window_enabled": "Only during a time window",
               "window_start": "From",
@@ -143,16 +159,17 @@
       }
     },
     "error": {
-      "empty_filter": "The filter matches nothing \u2014 configure at least one field.",
+      "empty_filter": "The rule selects nothing — fill at least one row or add a trigger.",
       "bad_yaml": "The YAML is not a mapping (or does not parse).",
-      "bad_duration": "Unreadable duration \u2014 use 2h, 1h30m, 90s, <5m or a number of minutes.",
+      "bad_duration": "Unreadable duration — use 2h, 1h30m, 90s or a number of minutes.",
       "bad_action": "Unknown action.",
       "bad_notify": "A notify service looks like notify.mobile_app_phone.",
       "bad_act": "Choose what to do: turn off, turn on or toggle.",
       "unknown_value": "A state no selected entity can be in: {unmatched}",
-      "bad_rate": "Unreadable rate \u2014 use >0.5/h, <=-2/h, >=1/m, <0.1/d.",
-      "bad_script": "Pick a script (script.\u2026) for \u201cRun a script\u201d.",
-      "bad_actions": "Add at least one action for \u201cRun these actions\u201d."
+      "bad_script": "Pick a script (script.…) for “Run a script”.",
+      "bad_actions": "Add at least one action for “Run these actions”.",
+      "bad_trigger": "A trigger row is unreadable: {unmatched}",
+      "no_name": "Give the rule a name."
     }
   },
   "services": {

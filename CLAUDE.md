@@ -170,3 +170,33 @@ at the next edge/midnight (`next_change`) so the flip is on time.
 Flow: section "effect" (collapsed unless enabled) with Time selectors
 and a weekday multi-select; `_merge` flattens. Count sensor attributes
 `in_effect`, `window`, `days`.
+
+## 0.9.0 — selection + triggers; per-trigger durations (2026-10-01)
+
+User sketch: split the form into "Selection filter" and "Triggers", every
+trigger row with its own duration (they had asked what dwell vs time-in-state
+meant — two concepts for one idea). Built:
+
+- **Options v2** (`OPTIONS_VERSION`, `async_migrate_entry`): `patterns[]`,
+  `labels[]`, `areas[]`, `classes[]` (`"battery:%"` pairs — SB Filter grammar 4),
+  `triggers[{kind: state|range|rate, value, for, per}]`, plus `filter_yaml` +
+  `for` for the advanced path only. `rule.upgrade_options` converts v1 exactly
+  (tests carry the nine live rules); what the model cannot say stays YAML.
+- **Clauses**: one SB Filter subscription per trigger (`build_clauses`), a
+  `RuleState` dwell each, `RuleEngine` = the union. The runner waits for EVERY
+  clause's first payload before evaluating (a partial union would drop and
+  re-enter entities → a second notification).
+- **Timing decision, measured not guessed.** First cut timed word states with
+  `state_for` (last_changed). Restart test: "Batteries low" 13 → 1, because HA
+  resets last_changed at every restart and v1's persisted dwell had not. Final:
+  state AND range rows both use the persisted dwell clock, SEEDED from
+  last_changed at first match (`RuleState.apply(..., since)`). Second restart:
+  13 restored before the first evaluation and held. Only the any-state row
+  keeps `state_for`.
+- **Flow**: step 1 chips (SelectSelector custom_value) + collapsed Advanced
+  section; step 2 `ObjectSelector(fields, multiple)` trigger list + the old
+  effect/actions sections verbatim. YAML is ABSORBED into fields + rows when
+  representable (`_absorb_yaml`); a step-2 post without `triggers` keeps the
+  absorbed rows — that is how the Entity Browser's save-as-rule lands as rows.
+- GOTCHA: a translation containing `<act>` renders "Translation error:
+  UNCLOSED_TAG" in the form — no angle-bracket words in strings.json.
