@@ -2,44 +2,47 @@
   "config": {
     "step": {
       "user": {
-        "title": "SB Watch rule — 1 of 2: which entities",
-        "description": "Every filled row must match; within a row, any entry matches.\n\n{triggers}",
+        "title": "SB Watch rule",
+        "description": "A rule is a selection of entities plus the triggers that make one of them count. {selected}{vocab}\n\n{unmatched}",
         "data": {
-          "name": "Rule name",
-          "patterns": "Patterns",
-          "areas": "Areas",
-          "labels": "Labels",
-          "classes": "Classes (device class, or class:unit)"
-        },
-        "data_description": {
-          "patterns": "Type a pattern and press Enter. Words in one pattern AND; * and ? wildcards; an entity id works too.",
-          "classes": "battery:% = battery sensors in percent; temperature = any unit; :°F = any class in °F."
+          "name": "Rule name"
         },
         "sections": {
-          "advanced": {
-            "name": "Advanced",
-            "description": "Rarely needed.",
+          "selection": {
+            "name": "Which entities",
+            "description": "Every filled row must match. Within a row, any entry matches.",
             "data": {
-              "problem": "Report as a problem (binary sensor device class)",
-              "filter_yaml": "Filter as YAML — paste an SB Entity Browser card's filter",
-              "for": "YAML only: matched continuously for (e.g. 10m)"
+              "patterns": "Patterns",
+              "areas": "Areas",
+              "labels": "Labels",
+              "classes": "Classes (device class, or class:unit)"
             },
             "data_description": {
-              "filter_yaml": "What this form can express is moved into the fields and trigger rows; the rest stays here and then defines the whole filter."
+              "patterns": "Type a pattern and press Enter. Words in one pattern AND; * and ? wildcards; an entity id works too.",
+              "classes": "battery:% = battery sensors in percent; temperature = any unit; :°F = any class in °F."
             }
-          }
-        }
-      },
-      "values": {
-        "title": "SB Watch rule — 2 of 2: when do they trigger",
-        "description": "Any one row triggers the rule for an entity. {selected}{vocab}\n\n{unmatched}",
-        "data": {
-          "triggers": "Triggers"
-        },
-        "data_description": {
-          "triggers": "State: a word state held for the duration (timed from the entity's last change). Range: a numeric state inside the range for the duration. Rate: change per minute/hour/day measured over the duration. No rows = every selected entity counts."
-        },
-        "sections": {
+          },
+          "trigger": {
+            "name": "When do they trigger",
+            "description": "Any one row triggers the rule for that entity. No rows: every selected entity counts.",
+            "data": {
+              "triggers": "Triggers"
+            },
+            "data_description": {
+              "triggers": "State: a word state held for the duration. Range: a numeric state inside the range for the duration (<20, 15-50, =3). Rate: change per minute/hour/day, measured over the duration."
+            }
+          },
+          "effect": {
+            "name": "When the rule is in effect",
+            "description": "Optional. A daily time window (may cross midnight, e.g. 18:00 → 06:00) AND a set of weekdays. Outside them the rule sees nothing: no count, no notification, no action. For a window crossing midnight the day is the one it started on.",
+            "data": {
+              "window_enabled": "Only during a time window",
+              "window_start": "From",
+              "window_end": "Until",
+              "days_enabled": "Only on these days",
+              "days": "Days"
+            }
+          },
           "actions": {
             "name": "Actions",
             "description": "Optional: what the rule does when something becomes active.",
@@ -57,15 +60,16 @@
               "warn_ahead": "e.g. 10m. 0 = act at once after notifying."
             }
           },
-          "effect": {
-            "name": "When the rule is in effect",
-            "description": "Optional. A daily time window (may cross midnight, e.g. 18:00 → 06:00) AND a set of weekdays. Outside them the rule sees nothing: no count, no notification, no action. For a window crossing midnight the day is the one it started on.",
+          "advanced": {
+            "name": "Advanced",
+            "description": "Rarely needed.",
             "data": {
-              "window_enabled": "Only during a time window",
-              "window_start": "From",
-              "window_end": "Until",
-              "days_enabled": "Only on these days",
-              "days": "Days"
+              "problem": "Report as a problem (binary sensor device class)",
+              "filter_yaml": "Filter as YAML — paste an SB Entity Browser card's filter",
+              "for": "YAML only: matched continuously for (e.g. 10m)"
+            },
+            "data_description": {
+              "filter_yaml": "What this form can express is moved into the fields and trigger rows; the rest stays here and then defines the whole filter."
             }
           }
         }
@@ -89,44 +93,47 @@
   "options": {
     "step": {
       "init": {
-        "title": "SB Watch rule — 1 of 2: which entities",
-        "description": "Every filled row must match; within a row, any entry matches.\n\n{triggers}",
+        "title": "SB Watch rule",
+        "description": "A rule is a selection of entities plus the triggers that make one of them count. {selected}{vocab}\n\n{unmatched}",
         "data": {
-          "name": "Rule name",
-          "patterns": "Patterns",
-          "areas": "Areas",
-          "labels": "Labels",
-          "classes": "Classes (device class, or class:unit)"
-        },
-        "data_description": {
-          "patterns": "Type a pattern and press Enter. Words in one pattern AND; * and ? wildcards; an entity id works too.",
-          "classes": "battery:% = battery sensors in percent; temperature = any unit; :°F = any class in °F."
+          "name": "Rule name"
         },
         "sections": {
-          "advanced": {
-            "name": "Advanced",
-            "description": "Rarely needed.",
+          "selection": {
+            "name": "Which entities",
+            "description": "Every filled row must match. Within a row, any entry matches.",
             "data": {
-              "problem": "Report as a problem (binary sensor device class)",
-              "filter_yaml": "Filter as YAML — paste an SB Entity Browser card's filter",
-              "for": "YAML only: matched continuously for (e.g. 10m)"
+              "patterns": "Patterns",
+              "areas": "Areas",
+              "labels": "Labels",
+              "classes": "Classes (device class, or class:unit)"
             },
             "data_description": {
-              "filter_yaml": "What this form can express is moved into the fields and trigger rows; the rest stays here and then defines the whole filter."
+              "patterns": "Type a pattern and press Enter. Words in one pattern AND; * and ? wildcards; an entity id works too.",
+              "classes": "battery:% = battery sensors in percent; temperature = any unit; :°F = any class in °F."
             }
-          }
-        }
-      },
-      "values": {
-        "title": "SB Watch rule — 2 of 2: when do they trigger",
-        "description": "Any one row triggers the rule for an entity. {selected}{vocab}\n\n{unmatched}",
-        "data": {
-          "triggers": "Triggers"
-        },
-        "data_description": {
-          "triggers": "State: a word state held for the duration (timed from the entity's last change). Range: a numeric state inside the range for the duration. Rate: change per minute/hour/day measured over the duration. No rows = every selected entity counts."
-        },
-        "sections": {
+          },
+          "trigger": {
+            "name": "When do they trigger",
+            "description": "Any one row triggers the rule for that entity. No rows: every selected entity counts.",
+            "data": {
+              "triggers": "Triggers"
+            },
+            "data_description": {
+              "triggers": "State: a word state held for the duration. Range: a numeric state inside the range for the duration (<20, 15-50, =3). Rate: change per minute/hour/day, measured over the duration."
+            }
+          },
+          "effect": {
+            "name": "When the rule is in effect",
+            "description": "Optional. A daily time window (may cross midnight, e.g. 18:00 → 06:00) AND a set of weekdays. Outside them the rule sees nothing: no count, no notification, no action. For a window crossing midnight the day is the one it started on.",
+            "data": {
+              "window_enabled": "Only during a time window",
+              "window_start": "From",
+              "window_end": "Until",
+              "days_enabled": "Only on these days",
+              "days": "Days"
+            }
+          },
           "actions": {
             "name": "Actions",
             "description": "Optional: what the rule does when something becomes active.",
@@ -144,15 +151,16 @@
               "warn_ahead": "e.g. 10m. 0 = act at once after notifying."
             }
           },
-          "effect": {
-            "name": "When the rule is in effect",
-            "description": "Optional. A daily time window (may cross midnight, e.g. 18:00 → 06:00) AND a set of weekdays. Outside them the rule sees nothing: no count, no notification, no action. For a window crossing midnight the day is the one it started on.",
+          "advanced": {
+            "name": "Advanced",
+            "description": "Rarely needed.",
             "data": {
-              "window_enabled": "Only during a time window",
-              "window_start": "From",
-              "window_end": "Until",
-              "days_enabled": "Only on these days",
-              "days": "Days"
+              "problem": "Report as a problem (binary sensor device class)",
+              "filter_yaml": "Filter as YAML — paste an SB Entity Browser card's filter",
+              "for": "YAML only: matched continuously for (e.g. 10m)"
+            },
+            "data_description": {
+              "filter_yaml": "What this form can express is moved into the fields and trigger rows; the rest stays here and then defines the whole filter."
             }
           }
         }

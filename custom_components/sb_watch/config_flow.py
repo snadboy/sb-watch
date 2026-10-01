@@ -1,19 +1,21 @@
-"""Config + options flow in two steps, mirroring the rule's two halves.
+"""Config + options flow: ONE page, laid out like the SB Watch Card's rule editor.
 
-Step 1 — WHICH ENTITIES: name, patterns, labels, areas, class:unit pairs (all
-as chip lists), plus a collapsed Advanced section (problem flag, the YAML
-override and its dwell).
-Step 2 — WHEN DO THEY TRIGGER: a list of trigger rows (state / range / rate,
-each with its own duration), then the collapsed "in effect" and Actions
-sections. The step description lists the states the selection is in right now.
+  Rule name
+  ▾ Which entities          patterns, areas, labels, class:unit pairs (chip lists)
+  ▾ When do they trigger    a list of rows — state / range / rate, each with its duration
+  ▸ When the rule is in effect
+  ▸ Actions
+  ▸ Advanced                problem flag, the YAML override and its dwell
 
-A pasted YAML filter that the model can express is ABSORBED: its selection
-fills step 1's fields, its conditions become step 2's trigger rows, and the
+(0.9.x was two steps — selection, then triggers. Opening Configure showed only
+the selection, and the comparison everyone looks for — "<20" — was a page away.)
+
+A pasted YAML filter that the model can express is ABSORBED on submit: its
+selection fills the chips, its conditions become the trigger rows, and the
 YAML box is emptied. Only what the form cannot say stays as YAML.
 
 The SB Watch Card's rule editor and the SB Entity Browser's "save as rule"
-drive these same two steps over the REST API; a step-2 post without
-`triggers` keeps the rows this flow already holds (the absorbed ones).
+post this same single step over the REST API.
 """
 
 from __future__ import annotations
@@ -37,57 +39,16 @@ from .const import (
 )
 from .rule import (
     _yaml_filter, build_clauses, clean_triggers, duration_seconds, model_from_filter, selection_filter, split_list,
-    trigger_errors, triggers_text, upgrade_options,
+    trigger_errors, upgrade_options,
 )
 
 SELECTION_KEYS = (CONF_PATTERNS, CONF_LABELS, CONF_AREAS, CONF_CLASSES)
 ADVANCED_KEYS = (CONF_PROBLEM, CONF_FILTER_YAML, CONF_FOR)
 ACTION_KEYS = (CONF_ACTION, CONF_NOTIFY_SERVICE, CONF_NOTIFY_URL, CONF_ACT, CONF_ACT_SCRIPT, CONF_ACT_ACTIONS, CONF_WARN_AHEAD)
 EFFECT_KEYS = (CONF_WINDOW_ENABLED, CONF_WINDOW_START, CONF_WINDOW_END, CONF_DAYS_ENABLED, CONF_DAYS)
+SECTIONS = {"selection": SELECTION_KEYS, "trigger": (CONF_TRIGGERS,), "effect": EFFECT_KEYS, "actions": ACTION_KEYS, "advanced": ADVANCED_KEYS}
 COMMON_CLASSES = ("battery:%", "temperature", "humidity:%", "illuminance:lx", "power:W", "energy:kWh", "occupancy", "motion",
                   "door", "window", "moisture", "problem", "connectivity")
-
-
-def _chips(values: list[str], extra: tuple[str, ...] = ()) -> selector.SelectSelector:
-    """A chip list: pick from what is there or type a new entry."""
-    opts = list(dict.fromkeys([*values, *extra]))
-    return selector.SelectSelector(selector.SelectSelectorConfig(options=opts, multiple=True, custom_value=True,
-                                                               mode=selector.SelectSelectorMode.DROPDOWN))
-
-
-def _step1_schema(d: dict[str, Any]) -> vol.Schema:
-    pats, classes = split_list(d.get(CONF_PATTERNS)), split_list(d.get(CONF_CLASSES))
-    adv = d.get("advanced") or {k: d.get(k) for k in ADVANCED_KEYS}
-    problem = adv.get(CONF_PROBLEM)
-    return vol.Schema({
-        vol.Required(CONF_NAME, default=d.get(CONF_NAME, "")): selector.TextSelector(),
-        vol.Optional(CONF_PATTERNS, default=pats): _chips(pats),
-        vol.Optional(CONF_AREAS, default=list(d.get(CONF_AREAS) or [])): selector.AreaSelector(selector.AreaSelectorConfig(multiple=True)),
-        vol.Optional(CONF_LABELS, default=list(d.get(CONF_LABELS) or [])): selector.LabelSelector(selector.LabelSelectorConfig(multiple=True)),
-        vol.Optional(CONF_CLASSES, default=classes): _chips(classes, COMMON_CLASSES),
-        vol.Optional("advanced"): section(vol.Schema({
-            vol.Optional(CONF_PROBLEM, default=True if problem is None else bool(problem)): selector.BooleanSelector(),
-            vol.Optional(CONF_FILTER_YAML, default=adv.get(CONF_FILTER_YAML) or ""): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
-            vol.Optional(CONF_FOR, default=adv.get(CONF_FOR) or ""): selector.TextSelector(),
-        }), {"collapsed": not str(adv.get(CONF_FILTER_YAML) or "").strip()}),
-    })
-
-
-def _clean_step1(user_input: dict[str, Any]) -> dict[str, Any]:
-    """Flatten the Advanced section; chip entries may still carry commas (an old client's one string)."""
-    adv = user_input.get("advanced") or {}
-    out: dict[str, Any] = {
-        CONF_NAME: str(user_input.get(CONF_NAME) or "").strip(),
-        CONF_PATTERNS: [p for item in split_list(user_input.get(CONF_PATTERNS)) for p in split_list(item)],
-        CONF_LABELS: [s for s in (user_input.get(CONF_LABELS) or []) if s and not str(s).startswith("___")],
-        CONF_AREAS: [s for s in (user_input.get(CONF_AREAS) or []) if s and not str(s).startswith("___")],
-        CONF_CLASSES: [c for c in split_list(user_input.get(CONF_CLASSES)) if c.strip(": ")],
-    }
-    for k in ADVANCED_KEYS:      # an old client posts these at the top level
-        v = adv.get(k, user_input.get(k))
-        out[k] = (True if v is None else bool(v)) if k == CONF_PROBLEM else str(v or "").strip()
-    return out
-
 
 TRIGGER_FIELDS = {
     "kind": {"required": True, "label": "Type", "selector": {"select": {"mode": "dropdown", "options": [
@@ -101,12 +62,40 @@ TRIGGER_FIELDS = {
 }
 
 
-def _step2_schema(d: dict[str, Any]) -> vol.Schema:
-    actions = d.get("actions") or {k: d.get(k) for k in ACTION_KEYS}
-    eff = d.get("effect") or {k: d.get(k) for k in EFFECT_KEYS}
+def _chips(values: list[str], extra: tuple[str, ...] = ()) -> selector.SelectSelector:
+    """A chip list: pick from what is there or type a new entry."""
+    opts = list(dict.fromkeys([*values, *extra]))
+    return selector.SelectSelector(selector.SelectSelectorConfig(options=opts, multiple=True, custom_value=True,
+                                                               mode=selector.SelectSelectorMode.DROPDOWN))
+
+
+def _flatten(user_input: dict[str, Any]) -> dict[str, Any]:
+    """The form's sections → one flat dict (a key posted at the top level is taken as it is)."""
+    flat = {k: v for k, v in user_input.items() if k not in SECTIONS}
+    for sec in SECTIONS:
+        flat.update(user_input.get(sec) or {})
+    return flat
+
+
+def _schema(d: dict[str, Any]) -> vol.Schema:
+    """`d` is FLAT (stored options, or a flattened submission being shown again)."""
+    pats, classes = split_list(d.get(CONF_PATTERNS)), split_list(d.get(CONF_CLASSES))
+    problem = d.get(CONF_PROBLEM)
+    actions = {k: d.get(k) for k in ACTION_KEYS}
+    eff = {k: d.get(k) for k in EFFECT_KEYS}
+    has_yaml = bool(str(d.get(CONF_FILTER_YAML) or "").strip())
     return vol.Schema({
-        vol.Optional(CONF_TRIGGERS, default=clean_triggers(d.get(CONF_TRIGGERS))): selector.ObjectSelector(selector.ObjectSelectorConfig(
-            multiple=True, label_field="value", description_field="for", fields=TRIGGER_FIELDS)),
+        vol.Required(CONF_NAME, default=d.get(CONF_NAME, "")): selector.TextSelector(),
+        vol.Optional("selection"): section(vol.Schema({
+            vol.Optional(CONF_PATTERNS, default=pats): _chips(pats),
+            vol.Optional(CONF_AREAS, default=list(d.get(CONF_AREAS) or [])): selector.AreaSelector(selector.AreaSelectorConfig(multiple=True)),
+            vol.Optional(CONF_LABELS, default=list(d.get(CONF_LABELS) or [])): selector.LabelSelector(selector.LabelSelectorConfig(multiple=True)),
+            vol.Optional(CONF_CLASSES, default=classes): _chips(classes, COMMON_CLASSES),
+        }), {"collapsed": False}),
+        vol.Optional("trigger"): section(vol.Schema({
+            vol.Optional(CONF_TRIGGERS, default=clean_triggers(d.get(CONF_TRIGGERS))): selector.ObjectSelector(selector.ObjectSelectorConfig(
+                multiple=True, label_field="value", description_field="for", fields=TRIGGER_FIELDS)),
+        }), {"collapsed": False}),
         vol.Optional("effect"): section(vol.Schema({
             vol.Optional(CONF_WINDOW_ENABLED, default=bool(eff.get(CONF_WINDOW_ENABLED))): selector.BooleanSelector(),
             vol.Optional(CONF_WINDOW_START, default=eff.get(CONF_WINDOW_START) or "18:00:00"): selector.TimeSelector(),
@@ -128,49 +117,52 @@ def _step2_schema(d: dict[str, Any]) -> vol.Schema:
             vol.Optional(CONF_ACT_ACTIONS, default=actions.get(CONF_ACT_ACTIONS) or []): selector.ActionSelector(),
             vol.Optional(CONF_WARN_AHEAD, default=actions.get(CONF_WARN_AHEAD) or "10m"): selector.TextSelector(),
         }), {"collapsed": (actions.get(CONF_ACTION) or "none") == "none"}),
+        vol.Optional("advanced"): section(vol.Schema({
+            vol.Optional(CONF_PROBLEM, default=True if problem is None else bool(problem)): selector.BooleanSelector(),
+            vol.Optional(CONF_FILTER_YAML, default=str(d.get(CONF_FILTER_YAML) or "")): selector.TextSelector(selector.TextSelectorConfig(multiline=True)),
+            vol.Optional(CONF_FOR, default=str(d.get(CONF_FOR) or "")): selector.TextSelector(),
+        }), {"collapsed": not has_yaml}),
     })
 
 
-def _absorb_yaml(step1: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, str]] | None, dict[str, str]]:
-    """(step1, triggers the YAML turned into or None, errors). See the module docstring."""
-    if not step1[CONF_FILTER_YAML]:
-        if step1[CONF_FOR]:
-            step1 = {**step1, CONF_FOR: ""}        # the dwell belongs to the YAML path only
-        return step1, None, {}
+def _clean(flat: dict[str, Any]) -> dict[str, Any]:
+    """A flattened submission → rule options, before validation (no triggers yet: see _absorb_yaml)."""
+    out: dict[str, Any] = {
+        CONF_NAME: str(flat.get(CONF_NAME) or "").strip(),
+        # chip entries may still carry commas (a client posting one string)
+        CONF_PATTERNS: [p for item in split_list(flat.get(CONF_PATTERNS)) for p in split_list(item)],
+        CONF_LABELS: [s for s in (flat.get(CONF_LABELS) or []) if s and not str(s).startswith("___")],
+        CONF_AREAS: [s for s in (flat.get(CONF_AREAS) or []) if s and not str(s).startswith("___")],
+        CONF_CLASSES: [c for c in split_list(flat.get(CONF_CLASSES)) if c.strip(": ")],
+    }
+    for k in ADVANCED_KEYS:
+        v = flat.get(k)
+        out[k] = (True if v is None else bool(v)) if k == CONF_PROBLEM else str(v or "").strip()
+    out.update({k: flat.get(k) for k in (*ACTION_KEYS, *EFFECT_KEYS)})
+    return out
+
+
+def _absorb_yaml(opts: dict[str, Any], posted_triggers: Any) -> tuple[dict[str, Any], dict[str, str]]:
+    """Settle the triggers. No YAML: the posted rows. YAML the model can express: its
+    selection and rows REPLACE the form's and the YAML is emptied. Other YAML: it defines
+    the filter, the rows are dropped."""
+    if not opts[CONF_FILTER_YAML]:
+        return {**opts, CONF_FOR: "", CONF_TRIGGERS: clean_triggers(posted_triggers)}, {}
     try:
-        cfg = _yaml_filter(step1)
+        cfg = _yaml_filter(opts)
     except Exception:  # noqa: BLE001
-        return step1, None, {"advanced": "bad_yaml"}
-    if step1[CONF_FOR] and duration_seconds(step1[CONF_FOR]) is None:
-        return step1, None, {"advanced": "bad_duration"}
-    model = model_from_filter(cfg, step1[CONF_FOR])
+        return {**opts, CONF_TRIGGERS: []}, {"base": "bad_yaml"}
+    if opts[CONF_FOR] and duration_seconds(opts[CONF_FOR]) is None:
+        return {**opts, CONF_TRIGGERS: []}, {"base": "bad_duration"}
+    model = model_from_filter(cfg, opts[CONF_FOR])
     if model is None:
-        return step1, None, {}
-    triggers = model.pop(CONF_TRIGGERS)
-    return {**step1, **model, CONF_FILTER_YAML: "", CONF_FOR: ""}, triggers, {}
+        return {**opts, CONF_TRIGGERS: []}, {}
+    return {**opts, **model, CONF_FILTER_YAML: "", CONF_FOR: ""}, {}
 
 
-def _triggers_note(d: dict[str, Any]) -> str:
-    """Step 1 only narrows; say what the rule's comparison IS, so "<20" is not looked for here."""
-    if str(d.get(CONF_FILTER_YAML) or "").strip():
-        return "This rule's conditions are in the YAML under Advanced."
-    rows = clean_triggers(d.get(CONF_TRIGGERS))
-    if rows:
-        return f"**Triggers now:** {triggers_text(rows)}. They are edited on the next step."
-    return "The conditions that trigger the rule — a state, a range such as <20, a rate — are on the next step."
-
-
-def _merge(step1: dict[str, Any], step2: dict[str, Any]) -> dict[str, Any]:
-    actions = step2.get("actions") or {}
-    eff = step2.get("effect") or {}
-    return {**step1,
-            CONF_TRIGGERS: [] if step1.get(CONF_FILTER_YAML) else clean_triggers(step2.get(CONF_TRIGGERS)),
-            **{k: actions.get(k) for k in ACTION_KEYS}, **{k: eff.get(k) for k in EFFECT_KEYS}}
-
-
-def _live(hass, step1: dict[str, Any]) -> dict[str, str]:
-    """What the selection holds right now, for the step-2 description."""
-    sel = selection_filter(step1) if not step1.get(CONF_FILTER_YAML) else {}
+def _live(hass, d: dict[str, Any]) -> dict[str, str]:
+    """What the (saved or just-submitted) selection holds right now, for the description."""
+    sel = selection_filter(d) if not str(d.get(CONF_FILTER_YAML) or "").strip() else {}
     if not sel:
         return {"selected": "", "vocab": ""}
     _, res = match_now(hass, sel)
@@ -178,17 +170,20 @@ def _live(hass, step1: dict[str, Any]) -> dict[str, str]:
     vocab.sort(key=lambda v: -v["current"])
     words = " · ".join(f"{v['label']} {v['current']}" for v in vocab[:12])
     n = len(res.ids)
-    return {"selected": f"{n} {'entity' if n == 1 else 'entities'} selected.", "vocab": f" In these states now: {words}." if words else ""}
+    return {"selected": f"The selection holds {n} {'entity' if n == 1 else 'entities'} now.",
+            "vocab": f" Word states among them: {words}." if words else ""}
 
 
-def _validate_all(hass, options: dict[str, Any]) -> tuple[dict[str, str], dict[str, str]]:
-    """Errors and description placeholders for the merged rule."""
+def _validate(hass, options: dict[str, Any]) -> tuple[dict[str, str], dict[str, str]]:
+    """Errors and description placeholders for the rule about to be saved."""
     errors: dict[str, str] = {}
     ph: dict[str, str] = {"unmatched": ""}
+    if not options[CONF_NAME]:
+        return {CONF_NAME: "no_name"}, ph
     problems = trigger_errors(options.get(CONF_TRIGGERS) or [])
     if problems:
         ph["unmatched"] = "; ".join(problems)
-        return {CONF_TRIGGERS: "bad_trigger"}, ph
+        return {"base": "bad_trigger"}, ph
     try:
         clauses = build_clauses(options)
     except Exception:  # noqa: BLE001
@@ -199,13 +194,13 @@ def _validate_all(hass, options: dict[str, Any]) -> tuple[dict[str, str], dict[s
     unreadable = [u for f in parsed for u in f.unreadable]
     if unreadable:
         ph["unmatched"] = "; ".join(unreadable)
-        return {CONF_TRIGGERS: "bad_trigger"}, ph
+        return {"base": "bad_trigger"}, ph
     unmatched = []
     for c in clauses:
         _, res = match_now(hass, c.filter)
         unmatched += [f"{u.value}" + (f" (did you mean {', '.join(u.suggestions)}?)" if u.suggestions else "") for u in res.unmatched_values]
     if unmatched:
-        errors[CONF_TRIGGERS] = "unknown_value"
+        errors["base"] = "unknown_value"
         ph["unmatched"] = "; ".join(dict.fromkeys(unmatched))
     mode = options.get(CONF_ACTION) or "none"
     if mode not in ACTIONS:
@@ -224,54 +219,38 @@ def _validate_all(hass, options: dict[str, Any]) -> tuple[dict[str, str], dict[s
     return errors, ph
 
 
-class _TwoStep:
+class _OneStep:
     """Shared by the config and options flows."""
 
-    _step1: dict[str, Any] = {}
     _defaults: dict[str, Any] = {}
 
-    async def _do_step1(self, step_id: str, user_input: dict[str, Any] | None):
-        errors: dict[str, str] = {}
-        if user_input is not None:
-            step1, absorbed, errors = _absorb_yaml(_clean_step1(user_input))
-            if not step1[CONF_NAME]:
-                errors[CONF_NAME] = "no_name"
-            if not errors:
-                self._step1 = step1
-                if absorbed is not None:
-                    self._defaults = {**self._defaults, CONF_TRIGGERS: absorbed}
-                return await self.async_step_values()
-        return self.async_show_form(step_id=step_id, data_schema=_step1_schema(user_input or self._defaults), errors=errors,
-                                    description_placeholders={"triggers": _triggers_note(self._defaults)})
-
-    async def _do_step2(self, user_input: dict[str, Any] | None):
+    async def _do_step(self, step_id: str, user_input: dict[str, Any] | None):
         errors: dict[str, str] = {}
         ph = {"unmatched": ""}
+        shown = self._defaults
         if user_input is not None:
-            merged = _merge(self._step1, user_input)
-            errors, ph = _validate_all(self.hass, merged)
+            flat = _flatten(user_input)
+            options, errors = _absorb_yaml(_clean(flat), flat.get(CONF_TRIGGERS))
             if not errors:
-                return self._finish(merged)
-        d = {**self._defaults, **(user_input or {})}
-        return self.async_show_form(step_id="values", data_schema=_step2_schema(d), errors=errors,
-                                    description_placeholders={**_live(self.hass, self._step1), **ph})
+                errors, ph = _validate(self.hass, options)
+            if not errors:
+                return self._finish(options)
+            shown = {**flat, CONF_TRIGGERS: clean_triggers(flat.get(CONF_TRIGGERS))}   # what was typed, not what is stored
+        return self.async_show_form(step_id=step_id, data_schema=_schema(shown), errors=errors,
+                                    description_placeholders={**_live(self.hass, shown), **ph})
 
 
-class SbWatchConfigFlow(_TwoStep, config_entries.ConfigFlow, domain=DOMAIN):
+class SbWatchConfigFlow(_OneStep, config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = OPTIONS_VERSION
 
     def __init__(self) -> None:
-        self._step1 = {}
         self._defaults = {}
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
-        return await self._do_step1("user", user_input)
+        return await self._do_step("user", user_input)
 
-    async def async_step_values(self, user_input: dict[str, Any] | None = None):
-        return await self._do_step2(user_input)
-
-    def _finish(self, merged: dict[str, Any]):
-        return self.async_create_entry(title=merged[CONF_NAME], data={}, options=merged)
+    def _finish(self, options: dict[str, Any]):
+        return self.async_create_entry(title=options[CONF_NAME], data={}, options=options)
 
     @staticmethod
     @callback
@@ -279,19 +258,15 @@ class SbWatchConfigFlow(_TwoStep, config_entries.ConfigFlow, domain=DOMAIN):
         return SbWatchOptionsFlow()
 
 
-class SbWatchOptionsFlow(_TwoStep, config_entries.OptionsFlow):
+class SbWatchOptionsFlow(_OneStep, config_entries.OptionsFlow):
     def __init__(self) -> None:
-        self._step1 = {}
         self._defaults = {}
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         if not self._defaults:
             self._defaults = upgrade_options(dict(self.config_entry.options))
-        return await self._do_step1("init", user_input)
+        return await self._do_step("init", user_input)
 
-    async def async_step_values(self, user_input: dict[str, Any] | None = None):
-        return await self._do_step2(user_input)
-
-    def _finish(self, merged: dict[str, Any]):
-        self.hass.config_entries.async_update_entry(self.config_entry, title=merged[CONF_NAME])
-        return self.async_create_entry(title="", data=merged)
+    def _finish(self, options: dict[str, Any]):
+        self.hass.config_entries.async_update_entry(self.config_entry, title=options[CONF_NAME])
+        return self.async_create_entry(title="", data=options)

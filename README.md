@@ -41,12 +41,14 @@ exception: with no value to match on, only time-since-last-change can say
 
 Where to edit:
 
-- *Settings → Devices & services → SB Watch → the rule's gear.* Two steps: **which
-  entities** (chips with an add control under each), then **when do they trigger**
-  (a list of rows; each opens a small form), followed by the in-effect window and
-  the actions. The step lists the states the selection is in right now.
-- The **SB Watch Card** with `rules: all` — the same model in one dialog, rows
-  inline, with live "N selected / N match now" counts.
+- *Settings → Devices & services → SB Watch → the rule's gear.* One page:
+  the rule name, then framed sections — **Which entities** (chip lists with an add
+  control under each), **When do they trigger** (a list of rows; each opens a
+  small form), **When the rule is in effect**, **Actions**, **Advanced**. The
+  description says how many entities the selection holds and which word states
+  they are in right now.
+- The **SB Watch Card** with `rules: all` — the same sections in one dialog, the
+  trigger rows editable inline, with live "N selected / N match now" counts.
 
 **Advanced — filter as YAML.** Paste an SB Entity Browser card's filter. What the
 form can express is *absorbed*: the selection fills the chips, the conditions

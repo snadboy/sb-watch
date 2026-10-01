@@ -209,3 +209,24 @@ before the redesign. Step 1's description now carries `{triggers}`
 (`_triggers_note`): "**Triggers now:** unavailable for 2m · <20 for 2m. They
 are edited on the next step." (or where the conditions live, for a new rule
 / a YAML rule). Titles are numbered "1 of 2" / "2 of 2".
+
+## 0.10.0 — the form is ONE page (2026-10-01)
+
+User opened Configure from Integrations for "Batteries low", saw only the
+selection, said "a low seems to be missing", then: "compare it to your
+screenshot" (the card's one-dialog editor) and "what about things like the
+Which Entities frame?". 0.9.1's fix — a sentence on step 1 naming the triggers
+— treated the symptom. The two steps existed only because the OLD states
+picker needed step 1's result; trigger rows do not.
+Now one step (`user` / `init`) built from HA `section()`s: name, then
+`selection` {patterns, areas, labels, classes} and `trigger` {triggers} (both
+expanded), `effect`, `actions`, `advanced`. `_flatten` un-nests a submission,
+`_absorb_yaml` settles the triggers (posted rows, or the YAML's when it is
+representable), `_validate` puts every non-field error on `base`. No `values`
+step, no `_triggers_note`.
+API clients post ONE body: `{name, selection:{…}, trigger:{triggers}, actions,
+effect, advanced}`; an omitted field takes the stored value (voluptuous
+default), so post every selection key. sb-watch-card 0.6.1 and
+sb-entity-browser 0.30.4 do; older card builds get a 400.
+LESSON: when a screenshot of one UI is shown as "the result", the other UI
+that edits the same thing must look like it, or say plainly that it does not.
