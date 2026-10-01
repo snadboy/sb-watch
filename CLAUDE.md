@@ -230,3 +230,30 @@ default), so post every selection key. sb-watch-card 0.6.1 and
 sb-entity-browser 0.30.4 do; older card builds get a 400.
 LESSON: when a screenshot of one UI is shown as "the result", the other UI
 that edits the same thing must look like it, or say plainly that it does not.
+
+## 0.11.0 — the sidebar panel (2026-10-01)
+
+User: HA's Configure dialog "still has a lot missing" next to the card's
+editor (inline trigger rows, live counts, class + unit boxes…). HA draws that
+dialog from its own selectors; an integration cannot put custom layout in it.
+So: **a panel**, fallback forms kept (their decision).
+
+- `__init__._async_register_panel`: static path `/sb_watch_static` →
+  `frontend/`, `panel_custom.async_register_panel(frontend_url_path="sb-watch",
+  webcomponent_name="sb-watch-panel", module_url=…?v=<version>,
+  require_admin=True)`, in `async_setup`, inside try/except — a panel failure
+  must never stop the rules. manifest deps: http, frontend, panel_custom.
+- **The editor code has ONE home: the SB Watch Card repo.**
+  `tools/build_panel.py` copies `../sb-watch-card/dist/sb-watch-card.js` under
+  panel-private element names (`sb-watch-rules`, `sb-watch-rules-editor`; a
+  custom element name can be defined once and the dashboard card may be on the
+  page), drops the customCards registration, appends `tools/panel_shell.js`.
+  **Run it before every release**; `frontend/sb-watch-panel.js` is GENERATED.
+- Shell: toolbar (`ha-menu-button`), the all-rules list (`rules: all`),
+  deep links `/sb-watch?edit=<entry_id>` and `?add=1` — the links both
+  fallback forms now carry in their description (`_editor_link`).
+- Opened cold (no dashboard loaded) `window.loadCardHelpers` does not exist:
+  the card's `loadHaForm` loads the Lovelace panel through
+  `partial-panel-resolver` first, and waits for `hui-entities-card` to be
+  DEFINED before asking for its config element (lazy upgrade again).
+  Verified headless by going straight to /sb-watch in a fresh browser.

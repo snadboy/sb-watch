@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "SB Watch rule",
-        "description": "A rule is a selection of entities plus the triggers that make one of them count. {selected}{vocab}\n\n{unmatched}",
+        "description": "{editor}\n\nA rule is a selection of entities plus the triggers that make one of them count. {selected}{vocab}\n\n{unmatched}",
         "data": {
           "name": "Rule name"
         },
@@ -94,7 +94,7 @@
     "step": {
       "init": {
         "title": "SB Watch rule",
-        "description": "A rule is a selection of entities plus the triggers that make one of them count. {selected}{vocab}\n\n{unmatched}",
+        "description": "{editor}\n\nA rule is a selection of entities plus the triggers that make one of them count. {selected}{vocab}\n\n{unmatched}",
         "data": {
           "name": "Rule name"
         },

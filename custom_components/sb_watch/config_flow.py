@@ -237,7 +237,7 @@ class _OneStep:
                 return self._finish(options)
             shown = {**flat, CONF_TRIGGERS: clean_triggers(flat.get(CONF_TRIGGERS))}   # what was typed, not what is stored
         return self.async_show_form(step_id=step_id, data_schema=_schema(shown), errors=errors,
-                                    description_placeholders={**_live(self.hass, shown), **ph})
+                                    description_placeholders={**_live(self.hass, shown), **ph, "editor": self._editor_link()})
 
 
 class SbWatchConfigFlow(_OneStep, config_entries.ConfigFlow, domain=DOMAIN):
@@ -248,6 +248,9 @@ class SbWatchConfigFlow(_OneStep, config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         return await self._do_step("user", user_input)
+
+    def _editor_link(self) -> str:
+        return "[Open the SB Watch editor](/sb-watch?add=1) to build the rule with inline trigger rows and live counts, or fill this form."
 
     def _finish(self, options: dict[str, Any]):
         return self.async_create_entry(title=options[CONF_NAME], data={}, options=options)
@@ -266,6 +269,10 @@ class SbWatchOptionsFlow(_OneStep, config_entries.OptionsFlow):
         if not self._defaults:
             self._defaults = upgrade_options(dict(self.config_entry.options))
         return await self._do_step("init", user_input)
+
+    def _editor_link(self) -> str:
+        return (f"[Open this rule in the SB Watch editor](/sb-watch?edit={self.config_entry.entry_id}) "
+                "for inline trigger rows and live counts, or edit it here.")
 
     def _finish(self, options: dict[str, Any]):
         self.hass.config_entries.async_update_entry(self.config_entry, title=options[CONF_NAME])

@@ -6,12 +6,15 @@
   ],
   "config_flow": true,
   "dependencies": [
-    "sb_filter"
+    "sb_filter",
+    "http",
+    "frontend",
+    "panel_custom"
   ],
   "documentation": "https://github.com/snadboy/sb-watch",
   "integration_type": "service",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/snadboy/sb-watch/issues",
   "requirements": [],
-  "version": "0.10.0"
+  "version": "0.11.0"
 }

@@ -8,6 +8,11 @@ Actions come later and hang off that event.
 
 from __future__ import annotations
 
+import logging
+from pathlib import Path
+
+from homeassistant.components import panel_custom
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
 from homeassistant.core import CoreState, HassJob, HomeAssistant, ServiceCall, callback
@@ -24,6 +29,22 @@ from .rule import upgrade_options
 from .runner import RuleRunner
 
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH]
+_LOGGER = logging.getLogger(__name__)
+PANEL_URL = "sb-watch"                 # the sidebar page: /sb-watch (also ?edit=<entry_id>, ?add=1)
+STATIC_URL = "/sb_watch_static"
+
+
+async def _async_register_panel(hass: HomeAssistant, version: str | None) -> None:
+    """The SB Watch sidebar panel: every rule, with the full rule editor (admins only).
+    The JS is built from the SB Watch Card's source by tools/build_panel.py."""
+    await hass.http.async_register_static_paths(
+        [StaticPathConfig(STATIC_URL, str(Path(__file__).parent / "frontend"), False)])
+    if PANEL_URL in hass.data.get("frontend_panels", {}):
+        return
+    await panel_custom.async_register_panel(
+        hass, frontend_url_path=PANEL_URL, webcomponent_name="sb-watch-panel", sidebar_title="SB Watch",
+        sidebar_icon="mdi:filter-check-outline", module_url=f"{STATIC_URL}/sb-watch-panel.js?v={version or 0}",
+        embed_iframe=False, require_admin=True)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -37,6 +58,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     if not hass.services.has_service(DOMAIN, "refresh"):
         hass.services.async_register(DOMAIN, "refresh", refresh)
+    try:
+        await _async_register_panel(hass, hass.data[DOMAIN]["version"])
+    except Exception:  # noqa: BLE001 — the panel is a convenience; the rules must load without it
+        _LOGGER.exception("SB Watch: could not register the sidebar panel")
     return True
 
 

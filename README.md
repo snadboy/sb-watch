@@ -41,14 +41,16 @@ exception: with no value to match on, only time-since-last-change can say
 
 Where to edit:
 
-- *Settings → Devices & services → SB Watch → the rule's gear.* One page:
-  the rule name, then framed sections — **Which entities** (chip lists with an add
-  control under each), **When do they trigger** (a list of rows; each opens a
-  small form), **When the rule is in effect**, **Actions**, **Advanced**. The
-  description says how many entities the selection holds and which word states
-  they are in right now.
-- The **SB Watch Card** with `rules: all` — the same sections in one dialog, the
-  trigger rows editable inline, with live "N selected / N match now" counts.
+- **The SB Watch panel** — a sidebar entry (admins), `/sb-watch`. Every rule in one
+  list with Add, edit, pause and delete, and the full editor: chips with the add
+  control beneath, trigger rows editable inline, live "N selected / N match now"
+  counts. Shipped inside the integration; nothing to add to a dashboard.
+- *Settings → Devices & services → SB Watch* — **Add service** and each rule's
+  **gear** open Home Assistant's own form: one page with the same sections
+  (*Which entities*, *When do they trigger*, *When the rule is in effect*,
+  *Actions*, *Advanced*), a trigger row opening in a small sub-form. It carries a
+  link to the same rule in the panel and works on its own if the panel does not.
+- The **SB Watch Card** (`rules: all`) puts the panel's list and editor on a dashboard.
 
 **Advanced — filter as YAML.** Paste an SB Entity Browser card's filter. What the
 form can express is *absorbed*: the selection fills the chips, the conditions
