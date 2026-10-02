@@ -318,3 +318,9 @@ Matter hubs reused) and 27 "Demo · …" rules (no actions, no problem flag); Pa
 Card demos now PICK a rule/filter (`rule: sensor.demo_battery_$band$_count`,
 `filter: sensor.demo_fp300_$value$_filter`). Card Lab untouched (GUI-owned); the
 two Param Card field-apply demos stay inline on purpose.
+
+## 0.13.2 (2026-10-02)
+
+Registers a usage provider with SB Filter (`register_usage`): which rules use which
+named filter (via `rule_source`), shown on SB Filter's sidebar page with links to
+`/sb-watch?edit=<id>`.

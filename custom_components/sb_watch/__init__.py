@@ -25,10 +25,10 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import entity_registry as er
 
 from custom_components.sb_filter.const import GRAMMAR_VERSION as FILTER_GRAMMAR
-from custom_components.sb_filter.named import async_find_or_create
+from custom_components.sb_filter.named import async_find_or_create, register_usage
 
 from .const import DOMAIN, MIN_FILTER_GRAMMAR, OPTIONS_VERSION, STARTUP_SETTLE_SECONDS
-from .rule import migration_target, upgrade_options
+from .rule import migration_target, rule_source, upgrade_options
 from . import websocket
 from .runner import RuleRunner
 
@@ -63,6 +63,22 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     if not hass.services.has_service(DOMAIN, "refresh"):
         hass.services.async_register(DOMAIN, "refresh", refresh)
     websocket.async_register(hass)
+
+    @callback
+    def _rules_by_filter() -> dict[str, list[dict]]:
+        """For SB Filter's page: which rules use which named filter."""
+        out: dict[str, list[dict]] = {}
+        for e in hass.config_entries.async_entries(DOMAIN):
+            try:
+                src = rule_source(dict(e.options))
+            except Exception:  # noqa: BLE001 — unreadable YAML uses no filter
+                continue
+            if "filter" in src:
+                out.setdefault(src["filter"], []).append(
+                    {"kind": "SB Watch rule", "name": e.title, "entry_id": e.entry_id, "url": f"/sb-watch?edit={e.entry_id}"})
+        return out
+
+    register_usage(hass, DOMAIN, _rules_by_filter)
     try:
         await _async_register_panel(hass, hass.data[DOMAIN]["version"])
     except Exception:  # noqa: BLE001 — the panel is a convenience; the rules must load without it
