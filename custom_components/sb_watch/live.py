@@ -17,6 +17,7 @@ from homeassistant.helpers.translation import async_get_cached_translations, asy
 from homeassistant.util import dt as dt_util
 
 from custom_components.sb_filter.ha import match_now
+from custom_components.sb_filter.named import named_filters
 
 from .condition import Condition, Lookup, StateRow, is_number, matching, parse_condition, unmatched_values, values
 from .const import DOMAIN
@@ -220,11 +221,18 @@ async def async_prepare_rates(hass: HomeAssistant, user: str | None, conds: list
 
 
 @callback
-def selected_ids(hass: HomeAssistant, selection: dict[str, Any]) -> list[str]:
-    """SB Filter's answer for a selection (nothing selected = nothing)."""
-    if not selection:
+def selected_ids(hass: HomeAssistant, source: dict[str, Any]) -> list[str]:
+    """The entities a rule's source names: {filter: id} (a named filter's current set),
+    {entities: [...]}, {selection: {...}} (SB Filter's answer), or a bare selection dict."""
+    if not source:
         return []
-    return list(match_now(hass, selection)[1].ids)
+    if "filter" in source:
+        nf = named_filters(hass).get(source["filter"])
+        return list(nf.ids) if nf else []
+    if "entities" in source:
+        return sorted(dict.fromkeys(e for e in source["entities"] if e))
+    sel = source.get("selection", source)
+    return list(match_now(hass, sel)[1].ids) if sel else []
 
 
 @callback
@@ -240,9 +248,9 @@ def unmatched_now(hass: HomeAssistant, condition: dict[str, Any], ids: list[str]
             for u in unmatched_values(cond, rows(hass, ids), ids, lookup(hass))]
 
 
-async def async_preview(hass: HomeAssistant, selection: dict[str, Any], conditions: list[dict[str, Any]]) -> dict[str, Any]:
-    """For an editor: what the selection holds, and which of those meet each condition now (durations not applied)."""
-    ids = selected_ids(hass, selection)
+async def async_preview(hass: HomeAssistant, source: dict[str, Any], conditions: list[dict[str, Any]]) -> dict[str, Any]:
+    """For an editor: what the source holds, and which of those meet each condition now (durations not applied)."""
+    ids = selected_ids(hass, source)
     conds = [parse_condition(c) for c in conditions]
     await async_prepare_rates(hass, None, conds, ids)
     rs, look, now = rows(hass, ids), lookup(hass), dt_util.utcnow()

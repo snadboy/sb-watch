@@ -288,3 +288,22 @@ Entity Browser = SB Filter's list or a rule's active set (`rule:`), not both.
 - INCIDENT (mine, no harm): a backgrounded "wait for HA" loop re-ran the
   RESTART script every 6 s; killed within seconds, the log shows ONE restart.
   Poll with GET /api/config only — never reuse a script that POSTs.
+
+## 0.13.0 — a rule picks a named filter OR entities (options v3) (2026-10-02)
+
+- Options v3: `filter` (SB Filter entry id) | `entities` [ids]; `rule.rule_source`
+  → {filter}|{entities}|{selection} (YAML path / unmigrated). Migration v2→v3 in
+  `async_migrate_entry`: `rule.migration_target` — one pattern that is exactly an
+  entity → entities, else `sb_filter.named.async_find_or_create(name=rule name)`.
+  Live: Batteries low / Nest hubs off / Lights on too long / Indoor temperature →
+  4 filters (renamed afterwards to Batteries, Matter hubs, Lights, Indoor
+  temperature + matching sensor ids); the 5 timeout rules → entities. Selected
+  counts and active sets identical (66/6/76/11, 14 and 18 held).
+- Runner: filter → `named.async_listen` (survives the filter's reloads: renaming
+  all four filters changed no rule's set); entities → static; selection →
+  FilterSubscription. Sensor attr `source` (+ `filter_name`).
+- Form section "Which entities" = `filter` (dropdown, "name (count)") + `entities`
+  (EntitySelector multiple); errors `no_source`, `pick_one`, `filter_missing`. An
+  absorbed YAML selection becomes a filter/entities (`_settle_source`).
+- WS `sb_watch/values` / `sb_watch/preview` take `source`. MIN_FILTER_GRAMMAR 5 +
+  imports `sb_filter.named` → needs sb_filter 0.7.0 (release that FIRST).

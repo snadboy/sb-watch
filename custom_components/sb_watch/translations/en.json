@@ -3,23 +3,21 @@
     "step": {
       "user": {
         "title": "SB Watch rule",
-        "description": "{editor}\n\nA rule is a selection of entities plus the triggers that make one of them count. {selected}{vocab}\n\n{unmatched}",
+        "description": "{editor}\n\nA rule is which entities (a filter, or entities) plus the triggers that make one of them count. {selected}{vocab}\n\n{unmatched}",
         "data": {
           "name": "Rule name"
         },
         "sections": {
           "selection": {
             "name": "Which entities",
-            "description": "Every filled row must match. Within a row, any entry matches.",
+            "description": "A named filter (made under SB Filter, or with New filter in the SB Watch panel and cards), OR individual entities — one of the two.",
             "data": {
-              "patterns": "Patterns",
-              "areas": "Areas",
-              "labels": "Labels",
-              "classes": "Classes (device class, or class:unit)"
+              "filter": "Filter",
+              "entities": "Or: these entities"
             },
             "data_description": {
-              "patterns": "Type a pattern and press Enter. Words in one pattern AND; * and ? wildcards; an entity id works too.",
-              "classes": "battery:% = battery sensors in percent; temperature = any unit; :°F = any class in °F."
+              "filter": "Pick a named SB Filter. Every rule and card that picks it follows its edits.",
+              "entities": "Exactly these entities — for a rule about one or two things."
             }
           },
           "trigger": {
@@ -86,7 +84,10 @@
       "bad_script": "Pick a script (script.…) for “Run a script”.",
       "bad_actions": "Add at least one action for “Run these actions”.",
       "bad_trigger": "A trigger row is unreadable: {unmatched}",
-      "no_name": "Give the rule a name."
+      "no_name": "Give the rule a name.",
+      "no_source": "Pick a filter or some entities.",
+      "pick_one": "Pick a filter OR entities, not both.",
+      "filter_missing": "That filter no longer exists — pick another."
     },
     "abort": {}
   },
@@ -94,23 +95,21 @@
     "step": {
       "init": {
         "title": "SB Watch rule",
-        "description": "{editor}\n\nA rule is a selection of entities plus the triggers that make one of them count. {selected}{vocab}\n\n{unmatched}",
+        "description": "{editor}\n\nA rule is which entities (a filter, or entities) plus the triggers that make one of them count. {selected}{vocab}\n\n{unmatched}",
         "data": {
           "name": "Rule name"
         },
         "sections": {
           "selection": {
             "name": "Which entities",
-            "description": "Every filled row must match. Within a row, any entry matches.",
+            "description": "A named filter (made under SB Filter, or with New filter in the SB Watch panel and cards), OR individual entities — one of the two.",
             "data": {
-              "patterns": "Patterns",
-              "areas": "Areas",
-              "labels": "Labels",
-              "classes": "Classes (device class, or class:unit)"
+              "filter": "Filter",
+              "entities": "Or: these entities"
             },
             "data_description": {
-              "patterns": "Type a pattern and press Enter. Words in one pattern AND; * and ? wildcards; an entity id works too.",
-              "classes": "battery:% = battery sensors in percent; temperature = any unit; :°F = any class in °F."
+              "filter": "Pick a named SB Filter. Every rule and card that picks it follows its edits.",
+              "entities": "Exactly these entities — for a rule about one or two things."
             }
           },
           "trigger": {
@@ -177,7 +176,10 @@
       "bad_script": "Pick a script (script.…) for “Run a script”.",
       "bad_actions": "Add at least one action for “Run these actions”.",
       "bad_trigger": "A trigger row is unreadable: {unmatched}",
-      "no_name": "Give the rule a name."
+      "no_name": "Give the rule a name.",
+      "no_source": "Pick a filter or some entities.",
+      "pick_one": "Pick a filter OR entities, not both.",
+      "filter_missing": "That filter no longer exists — pick another."
     }
   },
   "services": {

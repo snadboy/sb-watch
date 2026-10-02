@@ -239,6 +239,38 @@ def split_config(cfg: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
             {k: v for k, v in cfg.items() if k in _CONDITION_KEYS})
 
 
+def rule_source(options: dict[str, Any]) -> dict[str, Any]:
+    """Where a rule's entities come from — exactly one of:
+      {"filter": <SB Filter entry id>}   a named filter (options v3)
+      {"entities": [ids]}                these entities, exactly (options v3)
+      {"selection": {...}}               an inline selection: the advanced YAML, or a v2 rule not yet migrated
+      {}                                 nothing yet"""
+    if str(options.get("filter_yaml") or "").strip():
+        return {"selection": rule_selection(options)}
+    if options.get("filter"):
+        return {"filter": str(options["filter"])}
+    ents = [e for e in split_list(options.get("entities")) if "." in e]
+    if ents:
+        return {"entities": list(dict.fromkeys(ents))}
+    sel = selection_filter(options)
+    return {"selection": sel} if sel else {}
+
+
+def migration_target(options: dict[str, Any], is_entity) -> dict[str, Any] | None:
+    """v2 → v3: what a rule's inline selection becomes. `is_entity(id)` says whether an id is a real entity.
+    One pattern that is exactly an entity id → {"entities": [it]}; any other selection → {"selection": …}
+    (the caller finds or creates a named filter for it); the YAML path and an empty selection → None."""
+    if str(options.get("filter_yaml") or "").strip() or options.get("filter") or options.get("entities"):
+        return None
+    sel = selection_filter(options)
+    if not sel:
+        return None
+    pats = sel.get("patterns") or []
+    if set(sel) == {"patterns"} and len(pats) == 1 and is_entity(pats[0]):
+        return {"entities": [pats[0]]}
+    return {"selection": sel}
+
+
 def rule_selection(options: dict[str, Any]) -> dict[str, Any]:
     """What the rule hands SB Filter: the selection fields, or — with the YAML override — its selection keys."""
     if str(options.get("filter_yaml") or "").strip():

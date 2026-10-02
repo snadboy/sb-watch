@@ -1,7 +1,8 @@
 """One RuleRunner per config entry.
 
-SB Filter supplies the SELECTION (one subscription per rule: which entities,
-pushed whenever that set changes). The runner watches those entities' states
+The rule's SOURCE says which entities: a named SB Filter (followed in-process,
+pushed whenever its set changes), a fixed list of entities, or — the advanced
+YAML path — an inline selection with its own SB Filter subscription. The runner watches those entities' states
 itself: every trigger is a clause with a state condition (condition.py) and a
 dwell; the union of what the clauses hold is the rule's active set. It updates
 the entities and fires the change event; the actions hang off that."""
@@ -17,12 +18,13 @@ from homeassistant.helpers.event import async_call_later, async_track_state_chan
 from homeassistant.util import dt as dt_util
 
 from custom_components.sb_filter.ha import FilterSubscription
+from custom_components.sb_filter.named import async_listen as listen_named_filter
 
 from .actions import RuleActions
 from .condition import Condition, matching, parse_condition
 from .const import CONF_NAME, EVENT_CHANGED
 from .live import async_prepare_rates, lookup, rate_tracker, rows
-from .rule import Clause, Effect, RuleEngine, build_clauses, clean_triggers, rule_selection, selection_filter, upgrade_options
+from .rule import Clause, Effect, RuleEngine, build_clauses, clean_triggers, rule_source, selection_filter, upgrade_options
 
 DEBOUNCE_SECONDS = 1.0
 STATE_FOR_TICK_SECONDS = 30     # "any state for 6h" is measured from last_changed: time moves it, not events
@@ -38,11 +40,12 @@ class RuleRunner:
         self._yaml_error: list[str] = []
         try:
             self.clauses: list[Clause] = build_clauses(self.options)
-            self.selection_config: dict[str, Any] = rule_selection(self.options)
+            self.source: dict[str, Any] = rule_source(self.options)
         except Exception as err:  # noqa: BLE001 — unreadable advanced YAML: the rule matches nothing and says why
             self.clauses = []
-            self.selection_config = {}
+            self.source = {}
             self._yaml_error = [f"filter_yaml: {err}"]
+        self.selection_config: dict[str, Any] = self.source.get("selection") or {}
         self.conditions: dict[str, Condition] = {c.key: parse_condition(c.condition) for c in self.clauses}
         self.unreadable: list[str] = self._yaml_error + [u for c in self.conditions.values() for u in c.unreadable]
         self.selection: dict[str, Any] = selection_filter(self.options)
@@ -55,11 +58,13 @@ class RuleRunner:
         self._effect_timer: CALLBACK_TYPE | None = None
         self.configured: bool = True
         self.grammar: int | None = None
-        self.selected: tuple[str, ...] | None = None          # None until SB Filter has answered once
+        self.selected: tuple[str, ...] | None = None          # None until the source has answered once
+        self.filter_name: str | None = None
         self.matched_by: dict[str, tuple[str, ...]] = {}
         self.actions = RuleActions(hass, entry.entry_id, self.name, entry.options)
         self.actions.set_active_getter(lambda: self.state.active)
         self._sub: FilterSubscription | None = None
+        self._unsub_source: CALLBACK_TYPE | None = None
         self._track: CALLBACK_TYPE | None = None
         self._ticks: list[CALLBACK_TYPE] = []
         self._pending: CALLBACK_TYPE | None = None
@@ -92,20 +97,29 @@ class RuleRunner:
     # ---- lifecycle ----------------------------------------------------------
     @callback
     def start(self) -> None:
-        if self._sub is not None:
+        if self._sub is not None or self._unsub_source is not None:
             return
-        self._sub = FilterSubscription(self.hass, self.selection_config, self._on_selection, origin=f"rule: {self.name}")
         if any(c.state_for for c in self.conditions.values()):
             self._ticks.append(async_track_time_interval(self.hass, self._on_tick, timedelta(seconds=STATE_FOR_TICK_SECONDS)))
         if self._uses_rates:
             self._ticks.append(async_track_time_interval(self.hass, self._on_tick, timedelta(seconds=RATE_TICK_SECONDS)))
-        self._sub.start()
+        if "filter" in self.source:
+            self._unsub_source = listen_named_filter(self.hass, self.source["filter"], self._on_selection)
+        elif "entities" in self.source:
+            self._unsub_source = lambda: None
+            self._on_selection({"ids": sorted(self.source["entities"]), "configured": True})
+        else:                                   # the YAML path (or an unmigrated v2 rule): an inline selection
+            self._sub = FilterSubscription(self.hass, self.selection_config, self._on_selection, origin=f"rule: {self.name}")
+            self._sub.start()
 
     @callback
     def stop(self) -> None:
         if self._sub is not None:
             self._sub.stop()
             self._sub = None
+        if self._unsub_source is not None:
+            self._unsub_source()
+            self._unsub_source = None
         if self._track:
             self._track()
             self._track = None
@@ -137,6 +151,8 @@ class RuleRunner:
         self.configured = bool(payload.get("configured", True))
         self.unreadable = self._yaml_error + list(payload.get("unreadable") or []) + [u for c in self.conditions.values() for u in c.unreadable]
         self.grammar = payload.get("grammar")
+        if payload.get("name"):
+            self.filter_name = payload["name"]
         if ids != self.selected:
             if self._track:
                 self._track()

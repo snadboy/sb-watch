@@ -22,10 +22,13 @@ from homeassistant.loader import async_get_integration
 
 from homeassistant.exceptions import ConfigEntryNotReady
 
+from homeassistant.helpers import entity_registry as er
+
 from custom_components.sb_filter.const import GRAMMAR_VERSION as FILTER_GRAMMAR
+from custom_components.sb_filter.named import async_find_or_create
 
 from .const import DOMAIN, MIN_FILTER_GRAMMAR, OPTIONS_VERSION, STARTUP_SETTLE_SECONDS
-from .rule import upgrade_options
+from .rule import migration_target, upgrade_options
 from . import websocket
 from .runner import RuleRunner
 
@@ -68,18 +71,39 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """v1 (one filter + one dwell) → v2 (selection + triggers). What the model cannot
-    express stays as the advanced YAML, so no rule changes what it matches."""
+    """v1 (one filter + one dwell) → v2 (selection + triggers): what the model cannot
+    express stays as the advanced YAML. v2 → v3: the rule's own selection becomes a
+    NAMED SB Filter (an existing one with exactly that selection, else a new one named
+    after the rule), or — one pattern that is exactly an entity id — `entities`.
+    No rule changes what it matches."""
     if entry.version > OPTIONS_VERSION:
         return False
+    opts = dict(entry.options)
+    if entry.version < 2:
+        opts = upgrade_options(opts)
+    if entry.version < 3:
+        reg = er.async_get(hass)
+        target = migration_target(opts, lambda e: reg.async_get(e) is not None or hass.states.get(e) is not None)
+        if target is not None:
+            for k in ("patterns", "labels", "areas", "classes"):
+                opts.pop(k, None)
+            if "entities" in target:
+                opts.update({"entities": target["entities"], "filter": ""})
+            else:
+                try:
+                    fid = await async_find_or_create(hass, opts.get("name") or entry.title, target["selection"])
+                except Exception:  # noqa: BLE001 — SB Filter not ready: try again at the next start
+                    _LOGGER.exception("SB Watch: could not make a filter for rule %s", entry.title)
+                    return False
+                opts.update({"filter": fid, "entities": []})
     if entry.version < OPTIONS_VERSION:
-        hass.config_entries.async_update_entry(entry, options=upgrade_options(dict(entry.options)), version=OPTIONS_VERSION)
+        hass.config_entries.async_update_entry(entry, options=opts, version=OPTIONS_VERSION)
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if FILTER_GRAMMAR < MIN_FILTER_GRAMMAR:
-        raise ConfigEntryNotReady(f"SB Filter grammar {MIN_FILTER_GRAMMAR}+ needed (class:unit pairs); installed grammar is {FILTER_GRAMMAR} — update SB Filter")
+        raise ConfigEntryNotReady(f"SB Filter 0.7.0+ needed (grammar {MIN_FILTER_GRAMMAR}, named filters); installed grammar is {FILTER_GRAMMAR} — update SB Filter")
     runner = RuleRunner(hass, entry)
     hass.data.setdefault(DOMAIN, {}).setdefault("runners", {})[entry.entry_id] = runner
     entry.runtime_data = runner

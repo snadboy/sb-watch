@@ -30,7 +30,7 @@ class SbWatchPanel extends HTMLElement {
     </style>
     <div class="bar"><ha-menu-button></ha-menu-button><div class="title">SB Watch</div><a href="/config/integrations/integration/sb_watch">Integration page</a></div>
     <div class="page"><div class="col">
-      <div class="intro">A rule watches a selection of entities and counts one of them when a trigger holds: a state, a numeric range or a rate of change, for as long as you say. Add a rule, or use the pencil on one to edit it.</div>
+      <div class="intro">A rule watches the entities of a named filter (or a list of entities) and counts one of them when a trigger holds: a state, a numeric range or a rate of change, for as long as you say. Add a rule, or use the pencil on one to edit it.</div>
       <div class="slot"></div>
       <div class="ver">SB Watch __VERSION__ · editor __CARD_VERSION__</div>
     </div></div>`;

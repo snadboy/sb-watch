@@ -70,7 +70,8 @@ class CountSensor(SensorEntity, RestoreEntity):
             "pending": [e for e in r.matched if e not in r.active],
             "matched_since": {e: t.isoformat() for e, t in sorted(r.state.clocks().items())},   # the dwell clocks
             "filter": r.filter_config,          # one trigger: its whole filter; several: the selection they share
-            "selection": r.selection,
+            "source": {**r.source, **({"filter_name": r.filter_name} if r.filter_name else {})},   # {filter} | {entities} | {selection}
+            "selection": r.selection,            # an inline selection (YAML path / unmigrated); {} otherwise
             "triggers": r.triggers,              # [{kind, value, for, per}] — the rule as the form shows it
             "advanced": r.advanced,              # the YAML override defines the filter
             "for": r.dwell_seconds,

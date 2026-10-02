@@ -10,6 +10,8 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
     r = entry.runtime_data
     return {
         "options": dict(entry.options),
+        "source": r.source,
+        "filter_name": r.filter_name,
         "selection": r.selection_config,
         "selected": list(r.selected or ()),
         "filter": r.filter_config,

@@ -11,7 +11,7 @@ actions. A rule is **a selection + triggers + actions**; each rule is a config e
 | `sensor.<rule>_count` | how many are active; attributes `entity_ids`, `names`, `pending`, `matched_since` (the clocks), `selection`, `triggers`, `filter`, `advanced` |
 | event `sb_watch_changed` | `{rule, entry_id, entered, left, active, count}` on every change (never on the first evaluation) |
 
-Requires the SB Filter integration ≥ 0.5.0 (`classes` pairs; declared as a dependency, install it first).
+Requires the SB Filter integration ≥ 0.7.0 (named filters; declared as a dependency, install it first).
 Works with SB Filter grammar 4 and 5; from 0.12.0 SB Watch evaluates every state
 condition itself (`condition.py`, with the vectors SB Filter carried up to grammar 4
 in `tests/conditions.json`) and only asks SB Filter for the selection.
@@ -21,13 +21,16 @@ Entity Browser at it: `rule: sensor.<rule>_count`.
 
 ## A rule
 
-**Which entities** — the selection. Every filled row must match; within a row, any entry matches.
+**Which entities** — **a named SB Filter**, or **individual entities**; one of the two.
+Filters are made and edited in one place — SB Filter (its *New filter…* dialog
+opens from the rule editor, or *Settings → SB Filter → Add entry*) — so a filter
+shared by several rules and cards changes for all of them at once. Entities are
+for a rule about one or two things (the SB Watch Card's timeout rules use them).
 
-| Row | Example | Meaning |
-|---|---|---|
-| Patterns | `fp300`, `light.`, `cover.garage_door` | words in one pattern AND; `*` `?` wildcards; an entity id works |
-| Areas / Labels | Kitchen, Office | the entity's own, else its device's |
-| Classes | `battery:%`, `temperature`, `:°F` | device class **and** unit as a pair; either side optional |
+Options v3 store `filter` (the filter's entry id) or `entities`. Version 2 rules
+are migrated on first load: their own selection becomes a named filter (an
+existing one with exactly that selection is reused), or — one pattern that is
+exactly an entity id — `entities`. Nothing changes what a rule matches.
 
 **When do they trigger** — one list of rows; **any one** row triggers the rule for an entity. Each row has its own duration.
 
@@ -98,5 +101,7 @@ belongs in an automation on `sb_watch_changed`.
 
 | Command | Payload | Result |
 |---|---|---|
-| `sb_watch/values` | `selection` | the selected entities' states — `[{value, label, current, possible}]` — for chips and suggestions |
-| `sb_watch/preview` | `selection`, `triggers` | `{selected, matching, per_condition, unmatched, unreadable}` — which meet any trigger now (durations not applied) |
+| `sb_watch/values` | `source` | the source's entities' states — `[{value, label, current, possible}]` — for chips and suggestions |
+| `sb_watch/preview` | `source`, `triggers` | `{selected, matching, per_condition, unmatched, unreadable}` — which meet any trigger now (durations not applied) |
+
+A `source` is `{filter: <entry id>}`, `{entities: [...]}` or `{selection: {...}}`.

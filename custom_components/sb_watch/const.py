@@ -14,6 +14,8 @@ CONF_STATES = "states"
 CONF_STATE_FOR = "state_for"
 CONF_RATE = "rate"
 CONF_RATE_WINDOW = "rate_window"
+CONF_FILTER = "filter"           # a named SB Filter (its config entry id)
+CONF_ENTITIES = "entities"       # or: these entities, exactly
 CONF_CLASSES = "classes"          # ["battery:%", "temperature", ":°F"] — device class AND unit pairs (SB Filter grammar 4)
 CONF_TRIGGERS = "triggers"        # [{kind: state|range|rate, value, for, per}] — each with its own duration, ORed
 CONF_FOR = "for"                 # the advanced YAML path only: matched continuously this long before it counts
@@ -40,7 +42,7 @@ CONF_WARN_AHEAD = "warn_ahead"     # notify_then_act: act this long after the no
 ACTIONS = ("none", "notify", "notify_then_act", "act")
 ACTS = ("turn_off", "turn_on", "toggle", "run_script", "run_actions")
 
-OPTIONS_VERSION = 2          # 1 = one filter + one dwell; 2 = selection + triggers (rule.upgrade_options)
-MIN_FILTER_GRAMMAR = 4      # `classes` pairs
+OPTIONS_VERSION = 3          # 1 = one filter + one dwell; 2 = selection + triggers; 3 = a named filter OR entities
+MIN_FILTER_GRAMMAR = 5      # selection only + named filters (sb_filter 0.7.0)
 DWELL_TICK_SECONDS = 30
 STARTUP_SETTLE_SECONDS = 60   # after EVENT_HOMEASSISTANT_STARTED, before the first evaluation on a cold start

@@ -265,3 +265,18 @@ def test_split_config():
     except ValueError:
         pass
     assert rule.build_clauses({"patterns": ["x"], "triggers": []})[0].condition == {}, "no triggers: every selected entity counts"
+
+
+def test_rule_source_and_migration_target():
+    assert rule.rule_source({"filter": "abc", "patterns": ["x"]}) == {"filter": "abc"}
+    assert rule.rule_source({"entities": ["light.a", "light.a", "junk"]}) == {"entities": ["light.a"]}
+    assert rule.rule_source({"patterns": ["light."]}) == {"selection": {"patterns": ["light."]}}, "an unmigrated v2 rule still runs"
+    assert rule.rule_source({"patterns": ["x"], "filter_yaml": "labels: [a]\nstates: [on]"}) == {"selection": {"patterns": ["x"], "labels": ["a"]}}
+    assert rule.rule_source({}) == {}
+    real = {"light.desk_bulb_l535e"}.__contains__
+    assert rule.migration_target({"patterns": ["light.desk_bulb_l535e"]}, real) == {"entities": ["light.desk_bulb_l535e"]}
+    assert rule.migration_target({"patterns": ["light."]}, real) == {"selection": {"patterns": ["light."]}}
+    assert rule.migration_target({"patterns": ["light.desk_bulb_l535e"], "labels": ["x"]}, real) == {"selection": {"patterns": ["light.desk_bulb_l535e"], "labels": ["x"]}}
+    assert rule.migration_target({"classes": ["battery:%"]}, real) == {"selection": {"classes": ["battery:%"]}}
+    assert rule.migration_target({"patterns": ["x"], "filter_yaml": "labels: [a]"}, real) is None, "the YAML path keeps its inline selection"
+    assert rule.migration_target({"filter": "abc"}, real) is None

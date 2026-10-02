@@ -1,7 +1,7 @@
 """Config + options flow: ONE page, laid out like the SB Watch Card's rule editor.
 
   Rule name
-  ▾ Which entities          patterns, areas, labels, class:unit pairs (chip lists)
+  ▾ Which entities          a named SB Filter, OR individual entities
   ▾ When do they trigger    a list of rows — state / range / rate, each with its duration
   ▸ When the rule is in effect
   ▸ Actions
@@ -30,27 +30,27 @@ from homeassistant.data_entry_flow import section
 from homeassistant.helpers import selector
 
 from custom_components.sb_filter.grammar import parse_filter
+from custom_components.sb_filter.named import async_find_or_create, filter_entries, named_filters
 
 from .condition import parse_condition, parse_duration
 from .live import selected_ids, unmatched_now, values_now
 
 from .const import (
-    ACTIONS, ACTS, CONF_ACT, CONF_ACT_ACTIONS, CONF_ACT_SCRIPT, CONF_ACTION, CONF_AREAS, CONF_CLASSES, CONF_FILTER_YAML, CONF_FOR,
+    CONF_ENTITIES, CONF_FILTER, ACTIONS, ACTS, CONF_ACT, CONF_ACT_ACTIONS, CONF_ACT_SCRIPT, CONF_ACTION, CONF_AREAS, CONF_CLASSES, CONF_FILTER_YAML, CONF_FOR,
     CONF_LABELS, CONF_NAME, CONF_NOTIFY_SERVICE, CONF_NOTIFY_URL, CONF_PATTERNS, CONF_PROBLEM, CONF_TRIGGERS, CONF_WARN_AHEAD, DOMAIN,
     CONF_DAYS, CONF_DAYS_ENABLED, CONF_WINDOW_ENABLED, CONF_WINDOW_END, CONF_WINDOW_START, OPTIONS_VERSION, WEEKDAYS,
 )
 from .rule import (
-    _yaml_filter, build_clauses, clean_triggers, duration_seconds, model_from_filter, rule_selection, selection_filter, split_list,
+    _yaml_filter, build_clauses, clean_triggers, duration_seconds, model_from_filter, rule_source, selection_filter, split_list,
     trigger_errors, upgrade_options,
 )
 
-SELECTION_KEYS = (CONF_PATTERNS, CONF_LABELS, CONF_AREAS, CONF_CLASSES)
+SELECTION_KEYS = (CONF_FILTER, CONF_ENTITIES)
+INLINE_KEYS = (CONF_PATTERNS, CONF_LABELS, CONF_AREAS, CONF_CLASSES)     # v2's own selection; only the YAML path keeps one
 ADVANCED_KEYS = (CONF_PROBLEM, CONF_FILTER_YAML, CONF_FOR)
 ACTION_KEYS = (CONF_ACTION, CONF_NOTIFY_SERVICE, CONF_NOTIFY_URL, CONF_ACT, CONF_ACT_SCRIPT, CONF_ACT_ACTIONS, CONF_WARN_AHEAD)
 EFFECT_KEYS = (CONF_WINDOW_ENABLED, CONF_WINDOW_START, CONF_WINDOW_END, CONF_DAYS_ENABLED, CONF_DAYS)
 SECTIONS = {"selection": SELECTION_KEYS, "trigger": (CONF_TRIGGERS,), "effect": EFFECT_KEYS, "actions": ACTION_KEYS, "advanced": ADVANCED_KEYS}
-COMMON_CLASSES = ("battery:%", "temperature", "humidity:%", "illuminance:lx", "power:W", "energy:kWh", "occupancy", "motion",
-                  "door", "window", "moisture", "problem", "connectivity")
 
 TRIGGER_FIELDS = {
     "kind": {"required": True, "label": "Type", "selector": {"select": {"mode": "dropdown", "options": [
@@ -64,13 +64,6 @@ TRIGGER_FIELDS = {
 }
 
 
-def _chips(values: list[str], extra: tuple[str, ...] = ()) -> selector.SelectSelector:
-    """A chip list: pick from what is there or type a new entry."""
-    opts = list(dict.fromkeys([*values, *extra]))
-    return selector.SelectSelector(selector.SelectSelectorConfig(options=opts, multiple=True, custom_value=True,
-                                                               mode=selector.SelectSelectorMode.DROPDOWN))
-
-
 def _flatten(user_input: dict[str, Any]) -> dict[str, Any]:
     """The form's sections → one flat dict (a key posted at the top level is taken as it is)."""
     flat = {k: v for k, v in user_input.items() if k not in SECTIONS}
@@ -79,9 +72,17 @@ def _flatten(user_input: dict[str, Any]) -> dict[str, Any]:
     return flat
 
 
-def _schema(d: dict[str, Any]) -> vol.Schema:
+def _filter_options(hass) -> list[dict[str, str]]:
+    out = [{"value": "", "label": "— none: use the entities below —"}]
+    for e in sorted(filter_entries(hass), key=lambda e: (e.options.get("name") or e.title).lower()):
+        nf = named_filters(hass).get(e.entry_id)
+        n = f" ({len(nf.ids)})" if nf and nf.payload is not None else ""
+        out.append({"value": e.entry_id, "label": f"{e.options.get('name') or e.title}{n}"})
+    return out
+
+
+def _schema(hass, d: dict[str, Any]) -> vol.Schema:
     """`d` is FLAT (stored options, or a flattened submission being shown again)."""
-    pats, classes = split_list(d.get(CONF_PATTERNS)), split_list(d.get(CONF_CLASSES))
     problem = d.get(CONF_PROBLEM)
     actions = {k: d.get(k) for k in ACTION_KEYS}
     eff = {k: d.get(k) for k in EFFECT_KEYS}
@@ -89,10 +90,9 @@ def _schema(d: dict[str, Any]) -> vol.Schema:
     return vol.Schema({
         vol.Required(CONF_NAME, default=d.get(CONF_NAME, "")): selector.TextSelector(),
         vol.Optional("selection"): section(vol.Schema({
-            vol.Optional(CONF_PATTERNS, default=pats): _chips(pats),
-            vol.Optional(CONF_AREAS, default=list(d.get(CONF_AREAS) or [])): selector.AreaSelector(selector.AreaSelectorConfig(multiple=True)),
-            vol.Optional(CONF_LABELS, default=list(d.get(CONF_LABELS) or [])): selector.LabelSelector(selector.LabelSelectorConfig(multiple=True)),
-            vol.Optional(CONF_CLASSES, default=classes): _chips(classes, COMMON_CLASSES),
+            vol.Optional(CONF_FILTER, default=str(d.get(CONF_FILTER) or "")): selector.SelectSelector(selector.SelectSelectorConfig(
+                options=_filter_options(hass), mode=selector.SelectSelectorMode.DROPDOWN)),
+            vol.Optional(CONF_ENTITIES, default=list(d.get(CONF_ENTITIES) or [])): selector.EntitySelector(selector.EntitySelectorConfig(multiple=True)),
         }), {"collapsed": False}),
         vol.Optional("trigger"): section(vol.Schema({
             vol.Optional(CONF_TRIGGERS, default=clean_triggers(d.get(CONF_TRIGGERS))): selector.ObjectSelector(selector.ObjectSelectorConfig(
@@ -131,11 +131,8 @@ def _clean(flat: dict[str, Any]) -> dict[str, Any]:
     """A flattened submission → rule options, before validation (no triggers yet: see _absorb_yaml)."""
     out: dict[str, Any] = {
         CONF_NAME: str(flat.get(CONF_NAME) or "").strip(),
-        # chip entries may still carry commas (a client posting one string)
-        CONF_PATTERNS: [p for item in split_list(flat.get(CONF_PATTERNS)) for p in split_list(item)],
-        CONF_LABELS: [s for s in (flat.get(CONF_LABELS) or []) if s and not str(s).startswith("___")],
-        CONF_AREAS: [s for s in (flat.get(CONF_AREAS) or []) if s and not str(s).startswith("___")],
-        CONF_CLASSES: [c for c in split_list(flat.get(CONF_CLASSES)) if c.strip(": ")],
+        CONF_FILTER: str(flat.get(CONF_FILTER) or "").strip(),
+        CONF_ENTITIES: [e for e in split_list(flat.get(CONF_ENTITIES)) if "." in e],
     }
     for k in ADVANCED_KEYS:
         v = flat.get(k)
@@ -163,16 +160,19 @@ def _absorb_yaml(opts: dict[str, Any], posted_triggers: Any) -> tuple[dict[str, 
 
 
 def _live(hass, d: dict[str, Any]) -> dict[str, str]:
-    """What the (saved or just-submitted) selection holds right now, for the description."""
-    sel = selection_filter(d) if not str(d.get(CONF_FILTER_YAML) or "").strip() else {}
-    if not sel:
+    """What the (saved or just-submitted) source holds right now, for the description."""
+    try:
+        src = rule_source(d)
+    except Exception:  # noqa: BLE001 — unreadable YAML: said elsewhere
+        src = {}
+    if not src:
         return {"selected": "", "vocab": ""}
-    ids = selected_ids(hass, sel)
+    ids = selected_ids(hass, src)
     vocab = [v for v in values_now(hass, ids) if v.get("current")]
     vocab.sort(key=lambda v: -v["current"])
     words = " · ".join(f"{v['label']} {v['current']}" for v in vocab[:12])
     n = len(ids)
-    return {"selected": f"The selection holds {n} {'entity' if n == 1 else 'entities'} now.",
+    return {"selected": f"It holds {n} {'entity' if n == 1 else 'entities'} now.",
             "vocab": f" Word states among them: {words}." if words else ""}
 
 
@@ -188,18 +188,27 @@ def _validate(hass, options: dict[str, Any]) -> tuple[dict[str, str], dict[str, 
         return {"base": "bad_trigger"}, ph
     try:
         clauses = build_clauses(options)
-        selection = rule_selection(options)
+        source = rule_source(options)
     except Exception as err:  # noqa: BLE001
         ph["unmatched"] = str(err)
         return {"base": "bad_yaml"}, ph
-    sel = parse_filter(selection)
-    if not sel.configured:
-        return {"base": "empty_filter"}, ph          # a rule needs a selection: SB Filter never selects "everything"
-    unreadable = list(sel.unreadable) + [u for c in clauses for u in parse_condition(c.condition).unreadable]
+    if options.get(CONF_FILTER) and options.get(CONF_ENTITIES) and not options.get(CONF_FILTER_YAML):
+        return {"base": "pick_one"}, ph             # one source: a filter OR entities
+    if not source:
+        return {"base": "no_source"}, ph
+    if "filter" in source and not any(e.entry_id == source["filter"] for e in filter_entries(hass)):
+        return {"base": "filter_missing"}, ph
+    unreadable: list[str] = []
+    if "selection" in source:
+        sel = parse_filter(source["selection"])
+        if not sel.configured:
+            return {"base": "empty_filter"}, ph      # SB Filter never selects "everything"
+        unreadable += list(sel.unreadable)
+    unreadable += [u for c in clauses for u in parse_condition(c.condition).unreadable]
     if unreadable:
         ph["unmatched"] = "; ".join(unreadable)
         return {"base": "bad_trigger"}, ph
-    ids = selected_ids(hass, selection)
+    ids = selected_ids(hass, source)
     unmatched = [u for c in clauses for u in unmatched_now(hass, c.condition, ids)]
     if unmatched:
         errors["base"] = "unknown_value"
@@ -221,6 +230,19 @@ def _validate(hass, options: dict[str, Any]) -> tuple[dict[str, str], dict[str, 
     return errors, ph
 
 
+async def _settle_source(hass, options: dict[str, Any]) -> dict[str, Any]:
+    """A YAML selection the form absorbed (patterns, labels, … from `model_from_filter`) cannot be
+    stored inline any more: one exact entity becomes `entities`, anything else a named filter."""
+    sel = selection_filter(options)
+    out = {k: v for k, v in options.items() if k not in INLINE_KEYS}
+    if not sel or options.get(CONF_FILTER_YAML) or options.get(CONF_FILTER) or options.get(CONF_ENTITIES):
+        return out
+    pats = sel.get("patterns") or []
+    if set(sel) == {"patterns"} and len(pats) == 1 and hass.states.get(pats[0]) is not None:
+        return {**out, CONF_ENTITIES: [pats[0]]}
+    return {**out, CONF_FILTER: await async_find_or_create(hass, options.get(CONF_NAME) or "Filter", sel)}
+
+
 class _OneStep:
     """Shared by the config and options flows."""
 
@@ -234,11 +256,13 @@ class _OneStep:
             flat = _flatten(user_input)
             options, errors = _absorb_yaml(_clean(flat), flat.get(CONF_TRIGGERS))
             if not errors:
+                options = await _settle_source(self.hass, options)
+            if not errors:
                 errors, ph = _validate(self.hass, options)
             if not errors:
                 return self._finish(options)
             shown = {**flat, CONF_TRIGGERS: clean_triggers(flat.get(CONF_TRIGGERS))}   # what was typed, not what is stored
-        return self.async_show_form(step_id=step_id, data_schema=_schema(shown), errors=errors,
+        return self.async_show_form(step_id=step_id, data_schema=_schema(self.hass, shown), errors=errors,
                                     description_placeholders={**_live(self.hass, shown), **ph, "editor": self._editor_link()})
 
 
