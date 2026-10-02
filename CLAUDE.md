@@ -307,3 +307,14 @@ Entity Browser = SB Filter's list or a rule's active set (`rule:`), not both.
   absorbed YAML selection becomes a filter/entities (`_settle_source`).
 - WS `sb_watch/values` / `sb_watch/preview` take `source`. MIN_FILTER_GRAMMAR 5 +
   imports `sb_filter.named` → needs sb_filter 0.7.0 (release that FIRST).
+
+## 0.13.1 — YAML conditions on a named filter (2026-10-02)
+
+`rule_source`: YAML that carries only state keys (e.g. `state_for: "<10m"`, which no
+row can say) runs on the rule's filter/entities; YAML with selection keys still
+overrides the source. Built for the Samples demo "Changed in the last 10 min".
+Samples State Match + SB Cards Demo rebuilt on 24 "Demo · …" filters (+ Lights,
+Matter hubs reused) and 27 "Demo · …" rules (no actions, no problem flag); Param
+Card demos now PICK a rule/filter (`rule: sensor.demo_battery_$band$_count`,
+`filter: sensor.demo_fp300_$value$_filter`). Card Lab untouched (GUI-owned); the
+two Param Card field-apply demos stay inline on purpose.

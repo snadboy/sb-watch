@@ -63,11 +63,11 @@
             "description": "Rarely needed.",
             "data": {
               "problem": "Report as a problem (binary sensor device class)",
-              "filter_yaml": "Filter as YAML — paste an SB Entity Browser card's filter",
+              "filter_yaml": "Conditions as YAML",
               "for": "YAML only: matched continuously for (e.g. 10m)"
             },
             "data_description": {
-              "filter_yaml": "What this form can express is moved into the fields and trigger rows; the rest stays here and then defines the whole filter."
+              "filter_yaml": "State conditions the trigger rows cannot say, e.g. state_for: \"<10m\" (changed within 10 minutes), applied to the filter or entities above. What the rows can say is moved into them on save. Selection keys here (patterns, labels …) override the source, the old way."
             }
           }
         }
@@ -155,11 +155,11 @@
             "description": "Rarely needed.",
             "data": {
               "problem": "Report as a problem (binary sensor device class)",
-              "filter_yaml": "Filter as YAML — paste an SB Entity Browser card's filter",
+              "filter_yaml": "Conditions as YAML",
               "for": "YAML only: matched continuously for (e.g. 10m)"
             },
             "data_description": {
-              "filter_yaml": "What this form can express is moved into the fields and trigger rows; the rest stays here and then defines the whole filter."
+              "filter_yaml": "State conditions the trigger rows cannot say, e.g. state_for: \"<10m\" (changed within 10 minutes), applied to the filter or entities above. What the rows can say is moved into them on save. Selection keys here (patterns, labels …) override the source, the old way."
             }
           }
         }

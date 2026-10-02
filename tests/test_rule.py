@@ -280,3 +280,10 @@ def test_rule_source_and_migration_target():
     assert rule.migration_target({"classes": ["battery:%"]}, real) == {"selection": {"classes": ["battery:%"]}}
     assert rule.migration_target({"patterns": ["x"], "filter_yaml": "labels: [a]"}, real) is None, "the YAML path keeps its inline selection"
     assert rule.migration_target({"filter": "abc"}, real) is None
+
+
+def test_yaml_conditions_on_a_filter():
+    o = {"filter": "abc", "filter_yaml": "state_for: '<10m'", "triggers": []}
+    assert rule.rule_source(o) == {"filter": "abc"}, "YAML with only state keys runs on the rule's filter"
+    assert rule.build_clauses(o)[0].condition == {"state_for": "<10m"}
+    assert rule.rule_source({"filter": "abc", "filter_yaml": "patterns: [x]\nstate_for: '<10m'"}) == {"selection": {"patterns": ["x"]}}, "selection keys in YAML still win"

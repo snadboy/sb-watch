@@ -192,7 +192,7 @@ def _validate(hass, options: dict[str, Any]) -> tuple[dict[str, str], dict[str, 
     except Exception as err:  # noqa: BLE001
         ph["unmatched"] = str(err)
         return {"base": "bad_yaml"}, ph
-    if options.get(CONF_FILTER) and options.get(CONF_ENTITIES) and not options.get(CONF_FILTER_YAML):
+    if options.get(CONF_FILTER) and options.get(CONF_ENTITIES):
         return {"base": "pick_one"}, ph             # one source: a filter OR entities
     if not source:
         return {"base": "no_source"}, ph

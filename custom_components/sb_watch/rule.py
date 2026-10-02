@@ -243,10 +243,14 @@ def rule_source(options: dict[str, Any]) -> dict[str, Any]:
     """Where a rule's entities come from — exactly one of:
       {"filter": <SB Filter entry id>}   a named filter (options v3)
       {"entities": [ids]}                these entities, exactly (options v3)
-      {"selection": {...}}               an inline selection: the advanced YAML, or a v2 rule not yet migrated
-      {}                                 nothing yet"""
+      {"selection": {...}}               an inline selection: YAML that carries selection keys, or a v2 rule not yet migrated
+      {}                                 nothing yet
+    YAML holding only state keys (the conditions the rows cannot say, e.g. state_for: "<10m")
+    applies to the rule's filter or entities."""
     if str(options.get("filter_yaml") or "").strip():
-        return {"selection": rule_selection(options)}
+        sel = rule_selection(options)
+        if sel:
+            return {"selection": sel}
     if options.get("filter"):
         return {"filter": str(options["filter"])}
     ents = [e for e in split_list(options.get("entities")) if "." in e]
