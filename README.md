@@ -1,7 +1,9 @@
 # SB Watch
 
-Rules that watch what an [SB Filter](https://github.com/snadboy/sb-filter) matches.
-A rule is **a selection + triggers**; each rule is a config entry with its own device page:
+Rules that watch the **state** of the entities an [SB Filter](https://github.com/snadboy/sb-filter)
+selection picks, and act on it. SB Filter says *which entities*; SB Watch owns
+everything about their state — values, ranges, time in state, rates — and the
+actions. A rule is **a selection + triggers + actions**; each rule is a config entry with its own device page:
 
 | Entity | Meaning |
 |---|---|
@@ -9,7 +11,13 @@ A rule is **a selection + triggers**; each rule is a config entry with its own d
 | `sensor.<rule>_count` | how many are active; attributes `entity_ids`, `names`, `pending`, `matched_since` (the clocks), `selection`, `triggers`, `filter`, `advanced` |
 | event `sb_watch_changed` | `{rule, entry_id, entered, left, active, count}` on every change (never on the first evaluation) |
 
-Requires the SB Filter integration ≥ 0.5.0 (grammar 4: `classes` pairs; declared as a dependency, install it first).
+Requires the SB Filter integration ≥ 0.5.0 (`classes` pairs; declared as a dependency, install it first).
+Works with SB Filter grammar 4 and 5; from 0.12.0 SB Watch evaluates every state
+condition itself (`condition.py`, with the vectors SB Filter carried up to grammar 4
+in `tests/conditions.json`) and only asks SB Filter for the selection.
+
+To show a rule's active set on a dashboard — "batteries under 20 %" — point an SB
+Entity Browser at it: `rule: sensor.<rule>_count`.
 
 ## A rule
 
@@ -56,7 +64,9 @@ Where to edit:
 form can express is *absorbed*: the selection fills the chips, the conditions
 become trigger rows, and the YAML box empties. What it cannot say stays as YAML
 and then defines the whole filter, with its own "matched continuously for" dwell:
-a `state_for: "<5m"` (changed *recently*), a `rate` ANDed with `states`.
+a `state_for: "<5m"` (changed *recently*), a `rate` ANDed with `states`. Its
+selection keys go to SB Filter, its state keys are evaluated here; any other key
+is refused.
 
 ```yaml
 # entry options (version 2)
@@ -83,3 +93,10 @@ Acting is always on the entities that just entered, never again on the whole set
 rule can't keep re-firing on something you've handled. `switch.<rule>_paused` is the
 override: on = keep tracking, take no action (it survives restarts). Richer logic
 belongs in an automation on `sb_watch_changed`.
+
+## WebSocket API (for editors)
+
+| Command | Payload | Result |
+|---|---|---|
+| `sb_watch/values` | `selection` | the selected entities' states — `[{value, label, current, possible}]` — for chips and suggestions |
+| `sb_watch/preview` | `selection`, `triggers` | `{selected, matching, per_condition, unmatched, unreadable}` — which meet any trigger now (durations not applied) |

@@ -1,16 +1,16 @@
 """Rule logic, pure: no Home Assistant imports.
 
 A rule is a SELECTION (which entities: patterns, labels, areas, class:unit
-pairs) plus TRIGGERS (what makes one of them count), each trigger with its own
-duration. Every trigger becomes a CLAUSE: one SB Filter config (the selection
-plus that trigger's condition) and a dwell. An entity is ACTIVE while any
-clause holds it.
+pairs — SB Filter's job) plus TRIGGERS (what makes one of them count — this
+integration's job, see condition.py), each trigger with its own duration.
+Every trigger becomes a CLAUSE: a state condition and a dwell. An entity is
+ACTIVE while any clause holds it.
 
   state  "off" for 2h      → states: [off],   dwell 2 h
   range  "15-50" for 10m   → states: [15-50], dwell 10 min
   rate   ">0.5" per h over 5m → rate: [">0.5/h"], rate_window: 5m
   state  (any) for 6h      → state_for: 6h    (no value to match on, so only
-                             SB Filter's time-since-last-change can time it)
+                             the time since the last change can time it)
 
 The dwell is a clock per entity per clause: it starts when the entity first
 matches, SEEDED from the entity's last_changed (it has held that state at least
@@ -19,7 +19,8 @@ created), and it is PERSISTED, so it survives a Home Assistant restart —
 which last_changed itself does not.
 
 The advanced YAML override (a pasted card filter the form cannot express) is
-one clause with the rule-level dwell `for`.
+split: its selection keys go to SB Filter, its state keys make one clause with
+the rule-level dwell `for`.
 """
 
 from __future__ import annotations
@@ -205,7 +206,7 @@ def selection_filter(options: dict[str, Any]) -> dict[str, Any]:
 @dataclass(frozen=True)
 class Clause:
     key: str                       # stable across restarts: derived from the trigger's content
-    filter: dict[str, Any]
+    condition: dict[str, Any]      # state keys only (condition.CONDITION_KEYS); empty = every selected entity
     dwell_seconds: float = 0.0
     trigger: dict[str, str] | None = None
 
@@ -224,18 +225,39 @@ def _yaml_filter(options: dict[str, Any]) -> dict[str, Any]:
     return cfg
 
 
+_SELECTION_KEYS = ("patterns", "labels", "areas", "device_classes", "units", "classes")
+_CONDITION_KEYS = ("states", "state_min", "state_max", "state_for", "rate", "rate_window")
+
+
+def split_config(cfg: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """A combined (grammar 4) filter → (selection for SB Filter, state condition for SB Watch).
+    Any other key is an error: nothing may be silently dropped."""
+    unknown = sorted(set(cfg) - set(_SELECTION_KEYS) - set(_CONDITION_KEYS))
+    if unknown:
+        raise ValueError(f"unknown key(s): {', '.join(unknown)}")
+    return ({k: v for k, v in cfg.items() if k in _SELECTION_KEYS},
+            {k: v for k, v in cfg.items() if k in _CONDITION_KEYS})
+
+
+def rule_selection(options: dict[str, Any]) -> dict[str, Any]:
+    """What the rule hands SB Filter: the selection fields, or — with the YAML override — its selection keys."""
+    if str(options.get("filter_yaml") or "").strip():
+        return split_config(_yaml_filter(options))[0]
+    return selection_filter(options)
+
+
 def build_clauses(options: dict[str, Any]) -> list[Clause]:
     """One clause per trigger; the YAML override or a trigger-less rule is a single clause."""
     if str(options.get("filter_yaml") or "").strip():
-        return [Clause(key="yaml", filter=_yaml_filter(options), dwell_seconds=duration_seconds(options.get("for")) or 0.0)]
-    sel = selection_filter(options)
+        _, cond = split_config(_yaml_filter(options))
+        return [Clause(key="yaml", condition=cond, dwell_seconds=duration_seconds(options.get("for")) or 0.0)]
     triggers = clean_triggers(options.get("triggers"))
     if not triggers:
-        return [Clause(key="all", filter=sel)]
+        return [Clause(key="all", condition={})]
     clauses: list[Clause] = []
     seen: dict[str, int] = {}
     for t in triggers:
-        f = dict(sel)
+        f: dict[str, Any] = {}
         dwell = 0.0
         if t["kind"] == "state" and t["value"]:
             f["states"] = [t["value"]]
@@ -252,7 +274,7 @@ def build_clauses(options: dict[str, Any]) -> list[Clause]:
         key = "|".join((t["kind"], t["value"], t["for"], t.get("per", "")))
         n = seen.get(key, 0)
         seen[key] = n + 1
-        clauses.append(Clause(key=key if n == 0 else f"{key}#{n}", filter=f, dwell_seconds=dwell, trigger=t))
+        clauses.append(Clause(key=key if n == 0 else f"{key}#{n}", condition=f, dwell_seconds=dwell, trigger=t))
     return clauses
 
 

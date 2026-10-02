@@ -1,22 +1,32 @@
-"""One RuleRunner per config entry: one SB Filter subscription per clause (a
-trigger), a dwell per clause, the union as the rule's active set; updates
-entities, fires the change event."""
+"""One RuleRunner per config entry.
+
+SB Filter supplies the SELECTION (one subscription per rule: which entities,
+pushed whenever that set changes). The runner watches those entities' states
+itself: every trigger is a clause with a state condition (condition.py) and a
+dwell; the union of what the clauses hold is the rule's active set. It updates
+the entities and fires the change event; the actions hang off that."""
 
 from __future__ import annotations
 
-from functools import partial
+from datetime import timedelta
 from typing import Any, Callable
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant, callback
-from homeassistant.helpers.event import async_call_later
+from homeassistant.core import CALLBACK_TYPE, Event, HassJob, HomeAssistant, callback
+from homeassistant.helpers.event import async_call_later, async_track_state_change_event, async_track_time_interval
 from homeassistant.util import dt as dt_util
 
 from custom_components.sb_filter.ha import FilterSubscription
 
 from .actions import RuleActions
+from .condition import Condition, matching, parse_condition
 from .const import CONF_NAME, EVENT_CHANGED
-from .rule import Clause, Effect, RuleEngine, build_clauses, clean_triggers, selection_filter, upgrade_options
+from .live import async_prepare_rates, lookup, rate_tracker, rows
+from .rule import Clause, Effect, RuleEngine, build_clauses, clean_triggers, rule_selection, selection_filter, upgrade_options
+
+DEBOUNCE_SECONDS = 1.0
+STATE_FOR_TICK_SECONDS = 30     # "any state for 6h" is measured from last_changed: time moves it, not events
+RATE_TICK_SECONDS = 60          # a rate changes as its window slides, even with no new sample
 
 
 class RuleRunner:
@@ -25,28 +35,37 @@ class RuleRunner:
         self.entry = entry
         self.name: str = entry.options.get(CONF_NAME) or entry.title
         self.options: dict[str, Any] = upgrade_options(dict(entry.options))   # the migration did this already; belt and braces
-        self.unreadable: list[str] = []
+        self._yaml_error: list[str] = []
         try:
             self.clauses: list[Clause] = build_clauses(self.options)
+            self.selection_config: dict[str, Any] = rule_selection(self.options)
         except Exception as err:  # noqa: BLE001 — unreadable advanced YAML: the rule matches nothing and says why
             self.clauses = []
-            self.unreadable = [f"filter_yaml: {err}"]
+            self.selection_config = {}
+            self._yaml_error = [f"filter_yaml: {err}"]
+        self.conditions: dict[str, Condition] = {c.key: parse_condition(c.condition) for c in self.clauses}
+        self.unreadable: list[str] = self._yaml_error + [u for c in self.conditions.values() for u in c.unreadable]
         self.selection: dict[str, Any] = selection_filter(self.options)
         self.triggers: list[dict[str, str]] = [] if self.advanced else clean_triggers(self.options.get("triggers"))
-        # what the Count sensor shows as `filter`: the one clause's filter, or — with several — the selection they share
-        self.filter_config: dict[str, Any] = self.clauses[0].filter if len(self.clauses) == 1 else self.selection
+        # what the Count sensor shows as `filter`: the selection, plus the one clause's condition when there is one
+        self.filter_config: dict[str, Any] = {**self.selection_config, **(self.clauses[0].condition if len(self.clauses) == 1 else {})}
         self.dwell_seconds = max((c.dwell_seconds for c in self.clauses), default=0.0)
         self.state = RuleEngine(self.clauses)
         self.effect = Effect.from_options(entry.options)
         self._effect_timer: CALLBACK_TYPE | None = None
         self.configured: bool = True
         self.grammar: int | None = None
-        self.last_payload: dict[str, dict[str, Any]] = {}
+        self.selected: tuple[str, ...] | None = None          # None until SB Filter has answered once
+        self.matched_by: dict[str, tuple[str, ...]] = {}
         self.actions = RuleActions(hass, entry.entry_id, self.name, entry.options)
         self.actions.set_active_getter(lambda: self.state.active)
-        self._subs: dict[str, FilterSubscription] = {}
+        self._sub: FilterSubscription | None = None
+        self._track: CALLBACK_TYPE | None = None
+        self._ticks: list[CALLBACK_TYPE] = []
+        self._pending: CALLBACK_TYPE | None = None
         self._timer: CALLBACK_TYPE | None = None
         self._listeners: list[Callable[[], None]] = []
+        self._uses_rates = any(c.rates for c in self.conditions.values())
 
     @property
     def advanced(self) -> bool:
@@ -56,10 +75,7 @@ class RuleRunner:
     @property
     def matched(self) -> tuple[str, ...]:
         """Everything any clause matches right now — before the dwell and the in-effect gate."""
-        ids: set[str] = set()
-        for payload in self.last_payload.values():
-            ids.update(payload.get("ids") or ())
-        return tuple(sorted(ids))
+        return tuple(sorted({e for ids in self.matched_by.values() for e in ids}))
 
     # ---- persistence (the Count sensor stores this as extra restore data) -------
     def snapshot(self) -> dict[str, Any]:
@@ -76,20 +92,33 @@ class RuleRunner:
     # ---- lifecycle ----------------------------------------------------------
     @callback
     def start(self) -> None:
-        if self._subs:
+        if self._sub is not None:
             return
-        for c in self.clauses:
-            sub = FilterSubscription(self.hass, c.filter, partial(self._on_filter, c.key), origin=f"rule: {self.name}")
-            self._subs[c.key] = sub
-        for sub in list(self._subs.values()):
-            sub.start()
+        self._sub = FilterSubscription(self.hass, self.selection_config, self._on_selection, origin=f"rule: {self.name}")
+        if any(c.state_for for c in self.conditions.values()):
+            self._ticks.append(async_track_time_interval(self.hass, self._on_tick, timedelta(seconds=STATE_FOR_TICK_SECONDS)))
+        if self._uses_rates:
+            self._ticks.append(async_track_time_interval(self.hass, self._on_tick, timedelta(seconds=RATE_TICK_SECONDS)))
+        self._sub.start()
 
     @callback
     def stop(self) -> None:
-        for sub in self._subs.values():
-            sub.stop()
-        self._subs = {}
-        self.last_payload = {}
+        if self._sub is not None:
+            self._sub.stop()
+            self._sub = None
+        if self._track:
+            self._track()
+            self._track = None
+        for u in self._ticks:
+            u()
+        self._ticks = []
+        if self._pending:
+            self._pending()
+            self._pending = None
+        if self._uses_rates:
+            rate_tracker(self.hass).release(self.entry.entry_id)
+        self.selected = None
+        self.matched_by = {}
         self._cancel_timer()
         if self._effect_timer:
             self._effect_timer()
@@ -101,47 +130,62 @@ class RuleRunner:
         self._listeners.append(cb)
         return lambda: self._listeners.remove(cb)
 
-    # ---- evaluation ---------------------------------------------------------
+    # ---- inputs: the selection from SB Filter, states from the bus -----------
     @callback
-    def _on_filter(self, key: str, payload: dict[str, Any]) -> None:
-        self.last_payload[key] = payload
-        # Wait until EVERY clause has reported once: evaluating on a partial
-        # picture would drop the entities held by a clause that is yet to
-        # answer, then re-enter (and re-notify) them a moment later.
-        if len(self.last_payload) < len(self.clauses):
-            return
-        payloads = list(self.last_payload.values())
-        self.configured = any(p.get("configured", True) for p in payloads)
-        seen: list[str] = []
-        for p in payloads:
-            for item in p.get("unreadable") or []:
-                if item not in seen:
-                    seen.append(item)
-        self.unreadable = seen
-        self.grammar = payloads[0].get("grammar") if payloads else None
+    def _on_selection(self, payload: dict[str, Any]) -> None:
+        ids = tuple(payload.get("ids") or ())
+        self.configured = bool(payload.get("configured", True))
+        self.unreadable = self._yaml_error + list(payload.get("unreadable") or []) + [u for c in self.conditions.values() for u in c.unreadable]
+        self.grammar = payload.get("grammar")
+        if ids != self.selected:
+            if self._track:
+                self._track()
+                self._track = None
+            if ids:
+                self._track = async_track_state_change_event(self.hass, list(ids), self._on_state)
+        self.selected = ids
+        if self._uses_rates:
+            self.hass.async_create_task(self._seed_then_evaluate(ids))
+        else:
+            self._evaluate()
+
+    async def _seed_then_evaluate(self, ids: tuple[str, ...]) -> None:
+        await async_prepare_rates(self.hass, self.entry.entry_id, list(self.conditions.values()), ids)
+        if self._sub is not None and self.selected == ids:
+            self._evaluate()
+
+    @callback
+    def _on_state(self, _event: Event) -> None:
+        if self._pending is None:
+            self._pending = async_call_later(self.hass, DEBOUNCE_SECONDS, HassJob(self._fire, cancel_on_shutdown=True))
+
+    @callback
+    def _fire(self, _now=None) -> None:
+        self._pending = None
         self._evaluate()
+
+    @callback
+    def _on_tick(self, _now=None) -> None:
+        self._on_state(None)
 
     @property
     def in_effect(self) -> bool:
         return self.effect.in_effect(dt_util.now())
 
+    # ---- evaluation ---------------------------------------------------------
     @callback
     def _evaluate(self, _now=None) -> None:
         self._cancel_timer()
-        if len(self.last_payload) < len(self.clauses):
+        if self.selected is None:           # SB Filter has not answered yet
             return
         now = dt_util.utcnow()
+        rs, look = rows(self.hass, self.selected), lookup(self.hass)
+        self.matched_by = {c.key: tuple(matching(self.conditions[c.key], rs, self.selected, look, now)) for c in self.clauses}
         # Outside the window / on another day the rule sees nothing: Active off,
         # Count 0, no actions. When the window opens, whatever matches then ENTERS.
-        gated = {k: (p.get("ids") or ()) for k, p in self.last_payload.items()} if self.in_effect else {}
+        gated = self.matched_by if self.in_effect else {}
         # each matched entity's last_changed seeds its dwell clock the first time it matches
-        since = {}
-        for ids in gated.values():
-            for entity_id in ids:
-                if entity_id not in since:
-                    st = self.hass.states.get(entity_id)
-                    if st is not None:
-                        since[entity_id] = st.last_changed
+        since = {e: rs[e].last_changed for ids in gated.values() for e in ids if e in rs}
         entered, left = self.state.apply(gated, now, since)
         self._arm_effect_timer()
         if entered or left:
@@ -158,7 +202,7 @@ class RuleRunner:
             cb()
         wait = self.state.next_promotion(now)
         if wait is not None:
-            self._timer = async_call_later(self.hass, wait + 0.5, self._evaluate)
+            self._timer = async_call_later(self.hass, wait + 0.5, HassJob(self._evaluate, cancel_on_shutdown=True))
 
     @callback
     def _cancel_timer(self) -> None:

@@ -257,3 +257,34 @@ So: **a panel**, fallback forms kept (their decision).
   `partial-panel-resolver` first, and waits for `hui-entities-card` to be
   DEFINED before asking for its config element (lazy upgrade again).
   Verified headless by going straight to /sb-watch in a fresh browser.
+
+## 0.12.0 — SB Watch owns state (2026-10-02)
+
+The split (user: one filter language, one implementation, focused purposes):
+SB Filter (grammar 5) = WHICH entities; SB Watch = their STATE + actions; the
+Entity Browser = SB Filter's list or a rule's active set (`rule:`), not both.
+- `condition.py` (pure): the state half of SB Filter grammar 4, moved verbatim —
+  `parse_condition` (states / state_min / state_max / state_for / rate /
+  rate_window), `holds`, `matching`, `unmatched_values` (did-you-mean),
+  `values` (chips). `tests/conditions.json` = SB Filter's state vectors PORTED by
+  `tools/port_vectors.py` (selection resolved by grammar 4, then the condition):
+  42/42 pass — the proof that nothing changed meaning.
+- `live.py`: translations (`async_translate_state`), vocabularies, the
+  `RateTracker` (recorder-seeded, released when no rule uses rates; manifest
+  `after_dependencies: [recorder]`), `selected_ids`, `values_now`,
+  `unmatched_now`, `async_preview`.
+- `runner.py`: ONE `FilterSubscription` per rule (the selection), then its own
+  `async_track_state_change_event` on the selected ids (1 s debounce), a 30 s tick
+  for any-state rows (`state_for`), a 60 s tick for rate rows. `Clause.condition`
+  replaces `Clause.filter`; `rule.split_config` / `rule_selection` split a YAML
+  override into selection (→ SB Filter) and condition (→ here); unknown keys refused.
+- `websocket.py`: `sb_watch/values {selection}`, `sb_watch/preview {selection,
+  triggers}` for the card/panel editor (was `sb_filter/values` / `/match`).
+- Verified live: restart → all 9 rules hold their sets (two real changes
+  explained: garage batteries unavailable→0 % promoted at exactly +2 min; desk
+  bulb cycled by its own rule); throwaway helpers: typo refused with suggestion,
+  state row 1 m dwell, rate row unknown → matches after 1→10, cleanup. Panel:
+  "66 selected · 14 match now", `<101` → 64.
+- INCIDENT (mine, no harm): a backgrounded "wait for HA" loop re-ran the
+  RESTART script every 6 s; killed within seconds, the log shows ONE restart.
+  Poll with GET /api/config only — never reuse a script that POSTs.

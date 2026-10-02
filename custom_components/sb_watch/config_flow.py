@@ -14,8 +14,8 @@ A pasted YAML filter that the model can express is ABSORBED on submit: its
 selection fills the chips, its conditions become the trigger rows, and the
 YAML box is emptied. Only what the form cannot say stays as YAML.
 
-The SB Watch Card's rule editor and the SB Entity Browser's "save as rule"
-post this same single step over the REST API.
+The SB Watch Card's rule editor (and the sidebar panel built from it) posts
+this same single step over the REST API.
 """
 
 from __future__ import annotations
@@ -29,8 +29,10 @@ from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import selector
 
-from custom_components.sb_filter.grammar import parse_duration, parse_filter
-from custom_components.sb_filter.ha import match_now, values_now
+from custom_components.sb_filter.grammar import parse_filter
+
+from .condition import parse_condition, parse_duration
+from .live import selected_ids, unmatched_now, values_now
 
 from .const import (
     ACTIONS, ACTS, CONF_ACT, CONF_ACT_ACTIONS, CONF_ACT_SCRIPT, CONF_ACTION, CONF_AREAS, CONF_CLASSES, CONF_FILTER_YAML, CONF_FOR,
@@ -38,7 +40,7 @@ from .const import (
     CONF_DAYS, CONF_DAYS_ENABLED, CONF_WINDOW_ENABLED, CONF_WINDOW_END, CONF_WINDOW_START, OPTIONS_VERSION, WEEKDAYS,
 )
 from .rule import (
-    _yaml_filter, build_clauses, clean_triggers, duration_seconds, model_from_filter, selection_filter, split_list,
+    _yaml_filter, build_clauses, clean_triggers, duration_seconds, model_from_filter, rule_selection, selection_filter, split_list,
     trigger_errors, upgrade_options,
 )
 
@@ -165,11 +167,11 @@ def _live(hass, d: dict[str, Any]) -> dict[str, str]:
     sel = selection_filter(d) if not str(d.get(CONF_FILTER_YAML) or "").strip() else {}
     if not sel:
         return {"selected": "", "vocab": ""}
-    _, res = match_now(hass, sel)
-    vocab = [v for v in values_now(hass, sel) if v.get("current")]
+    ids = selected_ids(hass, sel)
+    vocab = [v for v in values_now(hass, ids) if v.get("current")]
     vocab.sort(key=lambda v: -v["current"])
     words = " · ".join(f"{v['label']} {v['current']}" for v in vocab[:12])
-    n = len(res.ids)
+    n = len(ids)
     return {"selected": f"The selection holds {n} {'entity' if n == 1 else 'entities'} now.",
             "vocab": f" Word states among them: {words}." if words else ""}
 
@@ -186,19 +188,19 @@ def _validate(hass, options: dict[str, Any]) -> tuple[dict[str, str], dict[str, 
         return {"base": "bad_trigger"}, ph
     try:
         clauses = build_clauses(options)
-    except Exception:  # noqa: BLE001
+        selection = rule_selection(options)
+    except Exception as err:  # noqa: BLE001
+        ph["unmatched"] = str(err)
         return {"base": "bad_yaml"}, ph
-    parsed = [parse_filter(c.filter) for c in clauses]
-    if not any(f.configured for f in parsed):
-        return {"base": "empty_filter"}, ph
-    unreadable = [u for f in parsed for u in f.unreadable]
+    sel = parse_filter(selection)
+    if not sel.configured:
+        return {"base": "empty_filter"}, ph          # a rule needs a selection: SB Filter never selects "everything"
+    unreadable = list(sel.unreadable) + [u for c in clauses for u in parse_condition(c.condition).unreadable]
     if unreadable:
         ph["unmatched"] = "; ".join(unreadable)
         return {"base": "bad_trigger"}, ph
-    unmatched = []
-    for c in clauses:
-        _, res = match_now(hass, c.filter)
-        unmatched += [f"{u.value}" + (f" (did you mean {', '.join(u.suggestions)}?)" if u.suggestions else "") for u in res.unmatched_values]
+    ids = selected_ids(hass, selection)
+    unmatched = [u for c in clauses for u in unmatched_now(hass, c.condition, ids)]
     if unmatched:
         errors["base"] = "unknown_value"
         ph["unmatched"] = "; ".join(dict.fromkeys(unmatched))

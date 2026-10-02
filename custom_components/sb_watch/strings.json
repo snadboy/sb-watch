@@ -77,7 +77,7 @@
     },
     "error": {
       "empty_filter": "The rule selects nothing — fill at least one row or add a trigger.",
-      "bad_yaml": "The YAML is not a mapping (or does not parse).",
+      "bad_yaml": "The YAML does not parse, is not a mapping, or has a key that is neither a selection nor a state condition. {unmatched}",
       "bad_duration": "Unreadable duration — use 2h, 1h30m, 90s or a number of minutes.",
       "bad_action": "Unknown action.",
       "bad_notify": "A notify service looks like notify.mobile_app_phone.",
@@ -168,7 +168,7 @@
     },
     "error": {
       "empty_filter": "The rule selects nothing — fill at least one row or add a trigger.",
-      "bad_yaml": "The YAML is not a mapping (or does not parse).",
+      "bad_yaml": "The YAML does not parse, is not a mapping, or has a key that is neither a selection nor a state condition. {unmatched}",
       "bad_duration": "Unreadable duration — use 2h, 1h30m, 90s or a number of minutes.",
       "bad_action": "Unknown action.",
       "bad_notify": "A notify service looks like notify.mobile_app_phone.",

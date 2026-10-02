@@ -174,7 +174,8 @@ def test_upgrade_keeps_what_the_model_cannot_say_as_yaml():
         assert up["triggers"] == [] and up["filter_yaml"].strip(), v1
         clauses = rule.build_clauses(up)
         assert len(clauses) == 1 and clauses[0].key == "yaml"
-        assert clauses[0].filter == rule.build_filter(v1), "the YAML clause is the v1 filter, exactly"
+        sel, cnd = rule.split_config(rule.build_filter(v1))
+        assert rule.rule_selection(up) == sel and clauses[0].condition == cnd, "the YAML clause is the v1 filter, exactly, split in two"
         assert clauses[0].dwell_seconds == (rule.duration_seconds(v1.get("for")) or 0)
     r = rule.upgrade_options({"patterns": "temp", "rate": ">0.5/h, <-2/h", "rate_window": "30m"})
     assert r["triggers"] == [{"kind": "rate", "value": ">0.5", "for": "30m", "per": "h"}, {"kind": "rate", "value": "<-2", "for": "30m", "per": "h"}]
@@ -188,12 +189,13 @@ def test_build_clauses():
     sel = {"patterns": ["fp300", "lwr02"], "labels": ["office"], "classes": ["battery:%"]}
     assert rule.selection_filter(o) == sel
     cs = rule.build_clauses(o)
-    assert [(c.filter, c.dwell_seconds) for c in cs] == [
-        ({**sel, "states": ["Off"]}, 7200.0),                           # timed by the clause's own clock
-        ({**sel, "states": ["3"]}, 60.0),
-        ({**sel, "states": ["15-50"]}, 600.0),
-        ({**sel, "rate": [">0.5/h"], "rate_window": "5m"}, 0.0),
-        ({**sel, "state_for": "6h"}, 0.0),                              # any state: only last_changed can time "unchanged for"
+    assert rule.rule_selection(o) == sel, "SB Filter gets the selection once, for every clause"
+    assert [(c.condition, c.dwell_seconds) for c in cs] == [
+        ({"states": ["Off"]}, 7200.0),                                  # timed by the clause's own clock
+        ({"states": ["3"]}, 60.0),
+        ({"states": ["15-50"]}, 600.0),
+        ({"rate": [">0.5/h"], "rate_window": "5m"}, 0.0),
+        ({"state_for": "6h"}, 0.0),                                     # any state: only last_changed can time "unchanged for"
     ], "the empty row is dropped"
     assert len({c.key for c in cs}) == len(cs)
     # a number typed into a State row is still timed as a range
@@ -252,3 +254,14 @@ def test_triggers_text():
     rows = rule.clean_triggers([{"kind": "state", "value": "unavailable", "for": "2m"}, {"kind": "range", "value": "<20", "for": "2m"},
                                 {"kind": "rate", "value": ">0.5", "per": "h", "for": "5m"}, {"kind": "state", "value": "", "for": "6h"}, {"kind": "state", "value": "off", "for": ""}])
     assert rule.triggers_text(rows) == "unavailable for 2m · <20 for 2m · >0.5/h over 5m · any state for 6h · off"
+
+
+def test_split_config():
+    sel, cnd = rule.split_config({"patterns": ["x"], "classes": ["battery:%"], "states": ["<20"], "state_for": "1h"})
+    assert sel == {"patterns": ["x"], "classes": ["battery:%"]} and cnd == {"states": ["<20"], "state_for": "1h"}
+    try:
+        rule.split_config({"patterns": ["x"], "sort": "name"})
+        raise AssertionError("an unknown key must not be dropped silently")
+    except ValueError:
+        pass
+    assert rule.build_clauses({"patterns": ["x"], "triggers": []})[0].condition == {}, "no triggers: every selected entity counts"

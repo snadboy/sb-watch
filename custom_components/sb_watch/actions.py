@@ -18,7 +18,7 @@ from functools import partial
 from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant, callback
 from homeassistant.helpers.event import async_call_later
 
-from custom_components.sb_filter.grammar import parse_duration
+from .condition import parse_duration
 
 import logging
 

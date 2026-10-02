@@ -1,9 +1,9 @@
-"""SB Watch — rules that watch what an SB filter matches.
+"""SB Watch — rules that watch the state of the entities SB Filter selects, and act.
 
-A rule = a selection (which entities) + triggers (state / range / rate, each with its own duration). Each rule is a config entry
-with a device page: a binary sensor (anything active), a count sensor with
-the active entity ids, and the `sb_watch_changed` event on every change.
-Actions come later and hang off that event.
+A rule = a selection (which entities — SB Filter) + triggers (state / range /
+rate, each with its own duration — evaluated here) + actions. Each rule is a
+config entry with a device page: a binary sensor (anything active), a count
+sensor with the active entity ids, and the `sb_watch_changed` event on every change.
 """
 
 from __future__ import annotations
@@ -26,6 +26,7 @@ from custom_components.sb_filter.const import GRAMMAR_VERSION as FILTER_GRAMMAR
 
 from .const import DOMAIN, MIN_FILTER_GRAMMAR, OPTIONS_VERSION, STARTUP_SETTLE_SECONDS
 from .rule import upgrade_options
+from . import websocket
 from .runner import RuleRunner
 
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.SWITCH]
@@ -58,6 +59,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     if not hass.services.has_service(DOMAIN, "refresh"):
         hass.services.async_register(DOMAIN, "refresh", refresh)
+    websocket.async_register(hass)
     try:
         await _async_register_panel(hass, hass.data[DOMAIN]["version"])
     except Exception:  # noqa: BLE001 — the panel is a convenience; the rules must load without it

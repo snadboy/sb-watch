@@ -1,0 +1,1068 @@
+{
+ "ported_from": "sb_filter grammar 4",
+ "snapshot": {
+  "now": "2026-09-27T12:00:00+00:00",
+  "states": {
+   "light.kitchen": {
+    "state": "on",
+    "attributes": {
+     "friendly_name": "Kitchen Light"
+    },
+    "last_changed": "2026-09-27T10:00:00+00:00"
+   },
+   "light.office": {
+    "state": "off",
+    "attributes": {
+     "friendly_name": "Office Lamp"
+    },
+    "last_changed": "2026-09-27T11:58:00+00:00"
+   },
+   "light.hall": {
+    "state": "on",
+    "attributes": {
+     "friendly_name": "Hall"
+    },
+    "last_changed": "2026-09-27T11:50:00+00:00"
+   },
+   "switch.nest_outlet_bedroom": {
+    "state": "on",
+    "attributes": {
+     "friendly_name": "Nest Outlet Bedroom P110M"
+    },
+    "last_changed": "2026-09-26T11:00:00+00:00"
+   },
+   "switch.nest_outlet_office": {
+    "state": "unavailable",
+    "attributes": {
+     "friendly_name": "Nest Outlet Office P110M"
+    },
+    "last_changed": "2026-09-27T11:59:30+00:00"
+   },
+   "binary_sensor.kitchen_fp300_occupancy": {
+    "state": "off",
+    "attributes": {
+     "friendly_name": "Kitchen FP300 Occupancy",
+     "device_class": "occupancy"
+    },
+    "last_changed": "2026-09-27T09:58:20+00:00"
+   },
+   "binary_sensor.bath_fp300_occupancy": {
+    "state": "on",
+    "attributes": {
+     "friendly_name": "Bath FP300 Occupancy",
+     "device_class": "occupancy"
+    },
+    "last_changed": "2026-09-27T11:59:40+00:00"
+   },
+   "sensor.kitchen_fp300_battery": {
+    "state": "100.0",
+    "attributes": {
+     "friendly_name": "Kitchen FP300 Battery",
+     "device_class": "battery",
+     "unit_of_measurement": "%"
+    },
+    "last_changed": "2026-09-27T10:36:40+00:00"
+   },
+   "sensor.bath_fp300_battery": {
+    "state": "15",
+    "attributes": {
+     "friendly_name": "Bath FP300 Battery",
+     "device_class": "battery",
+     "unit_of_measurement": "%"
+    },
+    "last_changed": "2026-09-27T10:36:40+00:00"
+   },
+   "sensor.bath_fp300_battery_voltage": {
+    "state": "2.98",
+    "attributes": {
+     "friendly_name": "Bath FP300 Battery voltage",
+     "device_class": "voltage",
+     "unit_of_measurement": "V"
+    },
+    "last_changed": "2026-09-27T10:36:40+00:00"
+   },
+   "sensor.garage_battery": {
+    "state": "unavailable",
+    "attributes": {
+     "friendly_name": "Garage battery",
+     "device_class": "battery",
+     "unit_of_measurement": "%"
+    },
+    "last_changed": "2026-09-22T20:53:20+00:00"
+   },
+   "sensor.kitchen_temperature": {
+    "state": "72.5",
+    "attributes": {
+     "friendly_name": "Kitchen Temperature",
+     "device_class": "temperature",
+     "unit_of_measurement": "°F"
+    },
+    "last_changed": "2026-09-27T11:58:20+00:00"
+   },
+   "sensor.rack_temperature": {
+    "state": "111.2",
+    "attributes": {
+     "friendly_name": "Rack Temperature",
+     "device_class": "temperature",
+     "unit_of_measurement": "°F"
+    },
+    "last_changed": "2026-09-27T11:58:20+00:00"
+   },
+   "sensor.battery_type": {
+    "state": "CR2450",
+    "attributes": {
+     "friendly_name": "Remote Battery Type"
+    },
+    "last_changed": "2026-09-27T11:58:20+00:00"
+   },
+   "sensor.weird": {
+    "state": "NaN",
+    "attributes": {
+     "friendly_name": "Weird"
+    },
+    "last_changed": "2026-09-27T11:58:20+00:00"
+   },
+   "sun.sun": {
+    "state": "below_horizon",
+    "attributes": {
+     "friendly_name": "Sun"
+    },
+    "last_changed": "2026-09-27T11:10:00+00:00"
+   },
+   "sensor.mtr_labelled": {
+    "state": "5",
+    "attributes": {
+     "friendly_name": "MTR thing"
+    },
+    "last_changed": "2026-09-27T11:58:20+00:00"
+   },
+   "sensor.string_hundred": {
+    "state": "one hundred",
+    "attributes": {
+     "friendly_name": "Word Hundred"
+    },
+    "last_changed": "2026-09-27T11:58:20+00:00"
+   },
+   "sensor.freezer_temp": {
+    "state": "12.0",
+    "attributes": {
+     "friendly_name": "Freezer Temp",
+     "device_class": "temperature",
+     "unit_of_measurement": "°F"
+    },
+    "last_changed": "2026-09-27T11:59:00+00:00"
+   },
+   "sensor.fridge_temp": {
+    "state": "38.0",
+    "attributes": {
+     "friendly_name": "Fridge Temp",
+     "device_class": "temperature",
+     "unit_of_measurement": "°F"
+    },
+    "last_changed": "2026-09-27T11:59:00+00:00"
+   },
+   "sensor.new_temp": {
+    "state": "70.0",
+    "attributes": {
+     "friendly_name": "New Temp",
+     "device_class": "temperature",
+     "unit_of_measurement": "°F"
+    },
+    "last_changed": "2026-09-27T11:59:00+00:00"
+   }
+  },
+  "formatted": {
+   "binary_sensor.kitchen_fp300_occupancy": "Clear",
+   "binary_sensor.bath_fp300_occupancy": "Detected",
+   "light.kitchen": "On",
+   "light.office": "Off",
+   "light.hall": "On",
+   "sun.sun": "Below horizon",
+   "switch.nest_outlet_office": "Unavailable",
+   "sensor.garage_battery": "Unavailable"
+  },
+  "vocabulary": {
+   "binary_sensor.kitchen_fp300_occupancy": [
+    [
+     "on",
+     "Detected"
+    ],
+    [
+     "off",
+     "Clear"
+    ]
+   ],
+   "binary_sensor.bath_fp300_occupancy": [
+    [
+     "on",
+     "Detected"
+    ],
+    [
+     "off",
+     "Clear"
+    ]
+   ],
+   "light.kitchen": [
+    [
+     "on",
+     "On"
+    ],
+    [
+     "off",
+     "Off"
+    ]
+   ],
+   "light.office": [
+    [
+     "on",
+     "On"
+    ],
+    [
+     "off",
+     "Off"
+    ]
+   ],
+   "light.hall": [
+    [
+     "on",
+     "On"
+    ],
+    [
+     "off",
+     "Off"
+    ]
+   ],
+   "switch.nest_outlet_bedroom": [
+    [
+     "on",
+     "On"
+    ],
+    [
+     "off",
+     "Off"
+    ]
+   ],
+   "switch.nest_outlet_office": [
+    [
+     "on",
+     "On"
+    ],
+    [
+     "off",
+     "Off"
+    ]
+   ],
+   "sun.sun": [
+    [
+     "above_horizon",
+     "Above horizon"
+    ],
+    [
+     "below_horizon",
+     "Below horizon"
+    ]
+   ],
+   "sensor.battery_type": [
+    [
+     "CR2450",
+     null
+    ]
+   ]
+  },
+  "history": {
+   "sensor.freezer_temp": [
+    [
+     "2026-09-27T10:00:00+00:00",
+     10.0
+    ],
+    [
+     "2026-09-27T11:00:00+00:00",
+     11.0
+    ],
+    [
+     "2026-09-27T11:30:00+00:00",
+     11.5
+    ],
+    [
+     "2026-09-27T11:59:00+00:00",
+     12.0
+    ]
+   ],
+   "sensor.fridge_temp": [
+    [
+     "2026-09-27T10:00:00+00:00",
+     40.0
+    ],
+    [
+     "2026-09-27T11:00:00+00:00",
+     40.0
+    ],
+    [
+     "2026-09-27T11:50:00+00:00",
+     39.0
+    ],
+    [
+     "2026-09-27T11:59:00+00:00",
+     38.0
+    ]
+   ],
+   "sensor.new_temp": [
+    [
+     "2026-09-27T11:45:00+00:00",
+     69.0
+    ],
+    [
+     "2026-09-27T11:59:00+00:00",
+     70.0
+    ]
+   ]
+  }
+ },
+ "cases": [
+  {
+   "name": "pattern: 'sensor.' also matches binary_sensor (documented)",
+   "selected": [
+    "binary_sensor.bath_fp300_occupancy",
+    "binary_sensor.kitchen_fp300_occupancy",
+    "sensor.bath_fp300_battery",
+    "sensor.bath_fp300_battery_voltage",
+    "sensor.battery_type",
+    "sensor.freezer_temp",
+    "sensor.fridge_temp",
+    "sensor.garage_battery",
+    "sensor.kitchen_fp300_battery",
+    "sensor.kitchen_temperature",
+    "sensor.mtr_labelled",
+    "sensor.new_temp",
+    "sensor.rack_temperature",
+    "sensor.string_hundred",
+    "sensor.weird"
+   ],
+   "condition": {
+    "states": [
+     "on"
+    ]
+   },
+   "expect_ids": [
+    "binary_sensor.bath_fp300_occupancy"
+   ]
+  },
+  {
+   "name": "states raw value",
+   "selected": [
+    "light.hall",
+    "light.kitchen",
+    "light.office"
+   ],
+   "condition": {
+    "states": [
+     "on"
+    ]
+   },
+   "expect_ids": [
+    "light.hall",
+    "light.kitchen"
+   ]
+  },
+  {
+   "name": "states formatted value, case-insensitive",
+   "selected": [
+    "binary_sensor.bath_fp300_occupancy",
+    "binary_sensor.kitchen_fp300_occupancy"
+   ],
+   "condition": {
+    "states": [
+     "clear"
+    ]
+   },
+   "expect_ids": [
+    "binary_sensor.kitchen_fp300_occupancy"
+   ]
+  },
+  {
+   "name": "states range <20 sweeps voltage without a class",
+   "selected": [
+    "sensor.bath_fp300_battery",
+    "sensor.bath_fp300_battery_voltage",
+    "sensor.battery_type",
+    "sensor.garage_battery",
+    "sensor.kitchen_fp300_battery"
+   ],
+   "condition": {
+    "states": [
+     "<20"
+    ]
+   },
+   "expect_ids": [
+    "sensor.bath_fp300_battery",
+    "sensor.bath_fp300_battery_voltage"
+   ]
+  },
+  {
+   "name": "states range pinned by device class",
+   "selected": [
+    "sensor.bath_fp300_battery",
+    "sensor.garage_battery",
+    "sensor.kitchen_fp300_battery"
+   ],
+   "condition": {
+    "states": [
+     "<20"
+    ]
+   },
+   "expect_ids": [
+    "sensor.bath_fp300_battery"
+   ]
+  },
+  {
+   "name": "states value OR range",
+   "selected": [
+    "sensor.bath_fp300_battery",
+    "sensor.garage_battery",
+    "sensor.kitchen_fp300_battery"
+   ],
+   "condition": {
+    "states": [
+     "unavailable",
+     "<20"
+    ]
+   },
+   "expect_ids": [
+    "sensor.bath_fp300_battery",
+    "sensor.garage_battery"
+   ]
+  },
+  {
+   "name": "ranges: several, comma string",
+   "selected": [
+    "sensor.freezer_temp",
+    "sensor.fridge_temp",
+    "sensor.kitchen_temperature",
+    "sensor.new_temp",
+    "sensor.rack_temperature"
+   ],
+   "condition": {
+    "states": "<75, >=100"
+   },
+   "expect_ids": [
+    "sensor.freezer_temp",
+    "sensor.fridge_temp",
+    "sensor.kitchen_temperature",
+    "sensor.new_temp",
+    "sensor.rack_temperature"
+   ]
+  },
+  {
+   "name": "ranges: span reversed normalises",
+   "selected": [
+    "sensor.freezer_temp",
+    "sensor.fridge_temp",
+    "sensor.kitchen_temperature",
+    "sensor.new_temp",
+    "sensor.rack_temperature"
+   ],
+   "condition": {
+    "states": [
+     "120-100"
+    ]
+   },
+   "expect_ids": [
+    "sensor.rack_temperature"
+   ]
+  },
+  {
+   "name": "ranges: exclusive vs inclusive",
+   "selected": [
+    "sensor.bath_fp300_battery",
+    "sensor.garage_battery",
+    "sensor.kitchen_fp300_battery"
+   ],
+   "condition": {
+    "states": [
+     ">15"
+    ]
+   },
+   "expect_ids": [
+    "sensor.kitchen_fp300_battery"
+   ]
+  },
+  {
+   "name": "ranges: >=15 inclusive",
+   "selected": [
+    "sensor.bath_fp300_battery",
+    "sensor.garage_battery",
+    "sensor.kitchen_fp300_battery"
+   ],
+   "condition": {
+    "states": [
+     ">=15"
+    ]
+   },
+   "expect_ids": [
+    "sensor.bath_fp300_battery",
+    "sensor.kitchen_fp300_battery"
+   ]
+  },
+  {
+   "name": "ranges: NaN never numeric",
+   "selected": [
+    "sensor.weird"
+   ],
+   "condition": {
+    "states": [
+     "<1000",
+     ">-1000"
+    ]
+   },
+   "expect_ids": []
+  },
+  {
+   "name": "state_min/state_max shorthand",
+   "selected": [
+    "sensor.bath_fp300_battery",
+    "sensor.garage_battery",
+    "sensor.kitchen_fp300_battery"
+   ],
+   "condition": {
+    "state_min": "10",
+    "state_max": 50
+   },
+   "expect_ids": [
+    "sensor.bath_fp300_battery"
+   ]
+  },
+  {
+   "name": "state_for >= 1h (default op)",
+   "selected": [
+    "light.hall",
+    "light.kitchen",
+    "light.office"
+   ],
+   "condition": {
+    "states": [
+     "on"
+    ],
+    "state_for": "1h"
+   },
+   "expect_ids": [
+    "light.kitchen"
+   ]
+  },
+  {
+   "name": "state_for bare number = minutes",
+   "selected": [
+    "light.hall",
+    "light.kitchen",
+    "light.office"
+   ],
+   "condition": {
+    "states": [
+     "on"
+    ],
+    "state_for": "5"
+   },
+   "expect_ids": [
+    "light.hall",
+    "light.kitchen"
+   ]
+  },
+  {
+   "name": "state_for <5m = changed recently",
+   "selected": [
+    "binary_sensor.bath_fp300_occupancy",
+    "binary_sensor.kitchen_fp300_occupancy",
+    "light.hall",
+    "light.kitchen",
+    "light.office",
+    "switch.nest_outlet_bedroom",
+    "switch.nest_outlet_office"
+   ],
+   "condition": {
+    "state_for": "<5m"
+   },
+   "expect_ids": [
+    "binary_sensor.bath_fp300_occupancy",
+    "light.office",
+    "switch.nest_outlet_office"
+   ]
+  },
+  {
+   "name": "state_for combined 1h30m",
+   "selected": [
+    "binary_sensor.bath_fp300_occupancy",
+    "binary_sensor.kitchen_fp300_occupancy"
+   ],
+   "condition": {
+    "state_for": ">1h30m"
+   },
+   "expect_ids": [
+    "binary_sensor.kitchen_fp300_occupancy"
+   ]
+  },
+  {
+   "name": "state_for 1d",
+   "selected": [
+    "switch.nest_outlet_bedroom",
+    "switch.nest_outlet_office"
+   ],
+   "condition": {
+    "state_for": "1d"
+   },
+   "expect_ids": [
+    "switch.nest_outlet_bedroom"
+   ]
+  },
+  {
+   "name": "state_for unreadable ignored + reported",
+   "selected": [
+    "light.hall",
+    "light.kitchen",
+    "light.office"
+   ],
+   "condition": {
+    "states": [
+     "on"
+    ],
+    "state_for": "soon"
+   },
+   "expect_ids": [
+    "light.hall",
+    "light.kitchen"
+   ],
+   "unreadable": [
+    "state_for: soon"
+   ]
+  },
+  {
+   "name": "everything at once",
+   "selected": [
+    "sensor.bath_fp300_battery"
+   ],
+   "condition": {
+    "states": [
+     "<20"
+    ],
+    "state_for": "1h"
+   },
+   "expect_ids": [
+    "sensor.bath_fp300_battery"
+   ]
+  },
+  {
+   "name": "v2 numeric equality: 100 matches 100.0",
+   "selected": [
+    "sensor.bath_fp300_battery",
+    "sensor.garage_battery",
+    "sensor.kitchen_fp300_battery"
+   ],
+   "condition": {
+    "states": [
+     "100"
+    ]
+   },
+   "expect_ids": [
+    "sensor.kitchen_fp300_battery"
+   ]
+  },
+  {
+   "name": "v2 numeric equality as a number, with a word alongside",
+   "selected": [
+    "sensor.bath_fp300_battery",
+    "sensor.garage_battery",
+    "sensor.kitchen_fp300_battery"
+   ],
+   "condition": {
+    "states": [
+     15,
+     "unavailable"
+    ]
+   },
+   "expect_ids": [
+    "sensor.bath_fp300_battery",
+    "sensor.garage_battery"
+   ]
+  },
+  {
+   "name": "v2 a word never matches a numeric state",
+   "selected": [
+    "sensor.bath_fp300_battery",
+    "sensor.bath_fp300_battery_voltage",
+    "sensor.battery_type",
+    "sensor.garage_battery",
+    "sensor.kitchen_fp300_battery"
+   ],
+   "condition": {
+    "states": [
+     "hundred"
+    ]
+   },
+   "expect_ids": [],
+   "unmatched_values": [
+    {
+     "value": "hundred",
+     "suggestions": []
+    }
+   ]
+  },
+  {
+   "name": "v2 a number never matches a word state",
+   "selected": [
+    "sensor.string_hundred"
+   ],
+   "condition": {
+    "states": [
+     "100"
+    ]
+   },
+   "expect_ids": []
+  },
+  {
+   "name": "v2 typo flagged with suggestion (occupancy selected)",
+   "selected": [
+    "binary_sensor.bath_fp300_occupancy",
+    "binary_sensor.kitchen_fp300_occupancy"
+   ],
+   "condition": {
+    "states": [
+     "Cleat"
+    ]
+   },
+   "expect_ids": [],
+   "unmatched_values": [
+    {
+     "value": "Cleat",
+     "suggestions": [
+      "Clear"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "v2 alias resolves per entity: Closed never matches a light",
+   "selected": [
+    "light.hall",
+    "light.kitchen",
+    "light.office"
+   ],
+   "condition": {
+    "states": [
+     "Closed"
+    ]
+   },
+   "expect_ids": [],
+   "unmatched_values": [
+    {
+     "value": "Closed",
+     "suggestions": []
+    }
+   ]
+  },
+  {
+   "name": "v2 valid word, no unmatched",
+   "selected": [
+    "binary_sensor.bath_fp300_occupancy",
+    "binary_sensor.kitchen_fp300_occupancy"
+   ],
+   "condition": {
+    "states": [
+     "clear"
+    ]
+   },
+   "expect_ids": [
+    "binary_sensor.kitchen_fp300_occupancy"
+   ],
+   "unmatched_values": []
+  },
+  {
+   "name": "v2 vocabulary includes states not currently present (Detected at night)",
+   "selected": [
+    "binary_sensor.bath_fp300_occupancy",
+    "binary_sensor.kitchen_fp300_occupancy"
+   ],
+   "condition": {
+    "states": [
+     "Detected"
+    ]
+   },
+   "expect_ids": [
+    "binary_sensor.bath_fp300_occupancy"
+   ],
+   "unmatched_values": []
+  },
+  {
+   "name": "v2 suggestion from vocabulary across selected entities",
+   "selected": [
+    "light.hall",
+    "light.kitchen",
+    "light.office",
+    "sun.sun"
+   ],
+   "condition": {
+    "states": [
+     "Below horizen"
+    ]
+   },
+   "expect_ids": [],
+   "unmatched_values": [
+    {
+     "value": "Below horizen",
+     "suggestions": [
+      "Below horizon"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "v2 unmatched only counts word entries, ranges are fine",
+   "selected": [
+    "sensor.bath_fp300_battery",
+    "sensor.garage_battery",
+    "sensor.kitchen_fp300_battery"
+   ],
+   "condition": {
+    "states": [
+     "<20",
+     "Cleat"
+    ]
+   },
+   "expect_ids": [
+    "sensor.bath_fp300_battery"
+   ],
+   "unmatched_values": [
+    {
+     "value": "Cleat",
+     "suggestions": []
+    }
+   ]
+  },
+  {
+   "name": "v2 current raw state is always in the vocabulary",
+   "selected": [
+    "sensor.battery_type"
+   ],
+   "condition": {
+    "states": [
+     "cr2450"
+    ]
+   },
+   "expect_ids": [
+    "sensor.battery_type"
+   ],
+   "unmatched_values": []
+  },
+  {
+   "name": "v3 rate: warming faster than 0.5/h",
+   "selected": [
+    "sensor.freezer_temp",
+    "sensor.fridge_temp",
+    "sensor.kitchen_temperature",
+    "sensor.new_temp",
+    "sensor.rack_temperature"
+   ],
+   "condition": {
+    "rate": [
+     ">0.5/h"
+    ]
+   },
+   "expect_ids": [
+    "sensor.freezer_temp"
+   ]
+  },
+  {
+   "name": "v3 rate: falling at 2/h or faster",
+   "selected": [
+    "sensor.freezer_temp",
+    "sensor.fridge_temp",
+    "sensor.kitchen_temperature",
+    "sensor.new_temp",
+    "sensor.rack_temperature"
+   ],
+   "condition": {
+    "rate": [
+     "<=-2/h"
+    ]
+   },
+   "expect_ids": [
+    "sensor.fridge_temp"
+   ]
+  },
+  {
+   "name": "v3 rate: either direction, ORed",
+   "selected": [
+    "sensor.freezer_temp",
+    "sensor.fridge_temp",
+    "sensor.kitchen_temperature",
+    "sensor.new_temp",
+    "sensor.rack_temperature"
+   ],
+   "condition": {
+    "rate": [
+     ">0.5/h",
+     "<-1/h"
+    ]
+   },
+   "expect_ids": [
+    "sensor.freezer_temp",
+    "sensor.fridge_temp"
+   ]
+  },
+  {
+   "name": "v3 rate: insufficient history never matches",
+   "selected": [
+    "sensor.new_temp"
+   ],
+   "condition": {
+    "rate": [
+     ">0/h"
+    ]
+   },
+   "expect_ids": []
+  },
+  {
+   "name": "v3 rate: per-minute unit over an hour window",
+   "selected": [
+    "sensor.freezer_temp",
+    "sensor.fridge_temp",
+    "sensor.kitchen_temperature",
+    "sensor.new_temp",
+    "sensor.rack_temperature"
+   ],
+   "condition": {
+    "rate": [
+     ">0.01/m"
+    ],
+    "rate_window": "1h"
+   },
+   "expect_ids": [
+    "sensor.freezer_temp"
+   ]
+  },
+  {
+   "name": "v3 rate: window override (2h): freezer +2/2h = 1/h, fridge −2/2h",
+   "selected": [
+    "sensor.freezer_temp",
+    "sensor.fridge_temp",
+    "sensor.kitchen_temperature",
+    "sensor.new_temp",
+    "sensor.rack_temperature"
+   ],
+   "condition": {
+    "rate": [
+     ">0.9/h"
+    ],
+    "rate_window": "2h"
+   },
+   "expect_ids": [
+    "sensor.freezer_temp"
+   ]
+  },
+  {
+   "name": "v3 rate: window shorter than the unit (30m): fridge −1/30m = −2/h",
+   "selected": [
+    "sensor.freezer_temp",
+    "sensor.fridge_temp",
+    "sensor.kitchen_temperature",
+    "sensor.new_temp",
+    "sensor.rack_temperature"
+   ],
+   "condition": {
+    "rate": [
+     "<-1.5/h"
+    ],
+    "rate_window": "30m"
+   },
+   "expect_ids": [
+    "sensor.fridge_temp"
+   ]
+  },
+  {
+   "name": "v3 rate: combined with a range",
+   "selected": [
+    "sensor.freezer_temp",
+    "sensor.fridge_temp",
+    "sensor.kitchen_temperature",
+    "sensor.new_temp",
+    "sensor.rack_temperature"
+   ],
+   "condition": {
+    "states": [
+     "<20"
+    ],
+    "rate": [
+     ">0.5/h"
+    ]
+   },
+   "expect_ids": [
+    "sensor.freezer_temp"
+   ]
+  },
+  {
+   "name": "v3 rate: unreadable entry is ignored and reported (like state_for)",
+   "selected": [
+    "sensor.freezer_temp",
+    "sensor.fridge_temp",
+    "sensor.kitchen_temperature",
+    "sensor.new_temp",
+    "sensor.rack_temperature"
+   ],
+   "condition": {
+    "rate": [
+     "0.5/h"
+    ]
+   },
+   "expect_ids": [
+    "sensor.freezer_temp",
+    "sensor.fridge_temp",
+    "sensor.kitchen_temperature",
+    "sensor.new_temp",
+    "sensor.rack_temperature"
+   ],
+   "unreadable": [
+    "rate: 0.5/h"
+   ]
+  },
+  {
+   "name": "v3 rate: a non-numeric state has no rate",
+   "selected": [
+    "binary_sensor.bath_fp300_occupancy",
+    "binary_sensor.kitchen_fp300_occupancy"
+   ],
+   "condition": {
+    "rate": [
+     ">0/h"
+    ]
+   },
+   "expect_ids": []
+  },
+  {
+   "name": "v3 rate: default window = the unit (1 m): last-minute rate is 0",
+   "selected": [
+    "sensor.freezer_temp"
+   ],
+   "condition": {
+    "rate": [
+     ">0.01/m"
+    ]
+   },
+   "expect_ids": []
+  },
+  {
+   "name": "classes AND states",
+   "selected": [
+    "sensor.bath_fp300_battery",
+    "sensor.garage_battery",
+    "sensor.kitchen_fp300_battery"
+   ],
+   "condition": {
+    "states": [
+     "<20",
+     "unavailable"
+    ]
+   },
+   "expect_ids": [
+    "sensor.bath_fp300_battery",
+    "sensor.garage_battery"
+   ]
+  }
+ ]
+}
