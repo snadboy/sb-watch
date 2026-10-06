@@ -324,3 +324,8 @@ two Param Card field-apply demos stay inline on purpose.
 Registers a usage provider with SB Filter (`register_usage`): which rules use which
 named filter (via `rule_source`), shown on SB Filter's sidebar page with links to
 `/sb-watch?edit=<id>`.
+
+## 0.13.3 (2026-10-05)
+
+Panel rebuilt from sb-watch-card 0.9.0 (Duplicate on every rule). No Python change; the
+version bump is what busts the panel's `?v=` cache.
