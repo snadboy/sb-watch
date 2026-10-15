@@ -9,14 +9,15 @@
     "sb_filter",
     "http",
     "frontend",
-    "panel_custom"
+    "panel_custom",
+    "sb_ui_kit"
   ],
   "documentation": "https://github.com/snadboy/sb-watch",
   "integration_type": "service",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/snadboy/sb-watch/issues",
   "requirements": [],
-  "version": "0.13.4",
+  "version": "0.13.5",
   "after_dependencies": [
     "recorder"
   ]
