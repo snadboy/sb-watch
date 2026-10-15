@@ -37,7 +37,7 @@ class SbWatchPanel extends HTMLElement {
     this._menu = root.querySelector("ha-menu-button");
     this._menu.narrow = this._narrow;
     const rules = document.createElement(CARD);
-    rules.setConfig({ title: "Rules", rules: "all" });
+    rules.setConfig({ title: "Rules", rules: "all", panel: true });
     root.querySelector(".slot").appendChild(rules);
     this._rules = rules;
     this._deepLink();
